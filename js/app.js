@@ -330,8 +330,14 @@ async function onSignedIn(user){
   currentUser=user;
   hideAuth();
   document.getElementById("userEmail").textContent=user.email||"Signed in";
+  osMode=false;
+  document.body.classList.remove("os-health-mode");
+  currentLayer=1;
+  currentItem=0;
+  workspaceMode="overview";
   renderSidebar();
   await renderWorkspace();
+  await loadWorkspace("overview");
   syncMobileUI();
   if(isMobileUI()) await setMobileTab(mobileTab);
 }
@@ -3062,5 +3068,12 @@ const _origSelectItem = window.selectItem;
 window.selectItem = async function(item){
   if(typeof _origSelectItem === "function") await _origSelectItem(item);
   const name = (typeof personalSystemName === "function") ? personalSystemName(item) : null;
-  if(name) await loadWorkspace(name);
+  if(name){
+    await loadWorkspace(name);
+  } else if(item === 0){
+    await loadWorkspace("overview");
+  }
+  // Ensure workspace content is visible
+  const wc = document.getElementById("workspaceContent");
+  if(wc) wc.style.display = "block";
 };
