@@ -1217,11 +1217,21 @@ button:active{transform:translateY(1px)}
 .small-tab.active{background:#f2f6fa;color:#071018;border-color:#fff;box-shadow:0 8px 22px rgba(255,255,255,.08)}
 
 /* Main shell */
-.layout{display:grid;grid-template-columns:218px 1fr;gap:12px}
+.layout{
+  display:grid;
+  grid-template-columns:218px 1fr;
+  gap:12px;
+  align-items:stretch;
+  height:calc(100vh - 156px);
+  max-height:840px;
+}
 .sidebar{
   background:linear-gradient(180deg,rgba(10,16,23,.96),rgba(8,13,19,.96));
-  border:1px solid var(--line);border-radius:14px;padding:12px 9px;min-height:720px;
-  box-shadow:var(--shadow);position:relative;overflow:hidden;
+  border:1px solid var(--line);border-radius:14px;padding:12px 9px;
+  height:100%;
+  min-height:0;
+  max-height:100%;
+  box-shadow:var(--shadow);position:relative;overflow-x:hidden;overflow-y:auto;
 }
 .sidebar:before{
   content:"";position:absolute;left:-80px;top:-120px;width:260px;height:280px;
@@ -1253,7 +1263,8 @@ button:active{transform:translateY(1px)}
 .logout-btn:hover{border-color:var(--line-strong);color:#fff;background:#121c26}
 
 /* Workspace */
-.main{min-width:0}
+.main{min-width:0;height:100%;min-height:0;display:flex;flex-direction:column}
+#systemPage{height:100%;min-height:0;display:flex;flex-direction:column}
 .workspace-head{display:flex;justify-content:space-between;align-items:flex-start;margin:3px 4px 15px;position:relative}
 .workspace-head:before{
   content:"";position:absolute;left:-8px;right:0;top:-5px;height:94px;z-index:-1;opacity:.72;
@@ -1406,6 +1417,18 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   .topbar{grid-template-columns:190px repeat(2,minmax(150px,1fr))}.top-right{grid-column:1/-1;justify-content:flex-end}
 }
 @media(max-width:700px){
+  .layout{height:auto;max-height:none}
+  .sidebar{height:auto;max-height:none;min-height:0}
+  .main,#systemPage,#domainWorkspaceShell.is-domain-active{height:auto;max-height:none}
+  #domainWorkspaceShell.is-domain-active > section,
+  #domainWorkspaceShell.is-domain-active > .placeholder,
+  #domainWorkspaceShell.is-domain-active > #placeholderPage,
+  #domainWorkspaceShell.is-domain-active > #writingDomainPage,
+  #domainWorkspaceShell.is-domain-active > #gameDomainPage,
+  #domainWorkspaceShell.is-domain-active > #engineDashboardPage,
+  #domainWorkspaceShell.is-domain-active > #overviewPage,
+  #domainWorkspaceShell.is-domain-active > #entryHubPage,
+  #domainWorkspaceShell.is-domain-active > #systemDefinitionPage{overflow:visible}
   .app{padding:10px 12px 84px;max-width:none}
   body.mobile-ui .mobile-header{display:flex;align-items:center;justify-content:space-between;padding:10px 6px 16px;position:sticky;top:0;z-index:20;background:rgba(7,11,16,.88);backdrop-filter:blur(16px)}
   body.mobile-ui .mobile-brand{position:relative;font-size:18px;font-weight:720;padding-left:32px;letter-spacing:-.03em}.mobile-brand:before{left:0;width:22px;height:22px}
@@ -1597,11 +1620,37 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
 #domainWorkspaceShell.domain-workspace-shell.is-domain-active{
   min-width:0;
   min-height:0;
+  max-width:1120px;
+  width:100%;
+  height:100%;
+  max-height:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
   padding:10px 12px 12px;
   border:1px solid var(--line);
   border-radius:15px;
   background:linear-gradient(180deg,rgba(10,16,23,.82),rgba(8,14,20,.92));
   box-shadow:0 16px 42px rgba(0,0,0,.17),inset 0 1px 0 rgba(255,255,255,.025);
+  box-sizing:border-box;
+}
+#domainWorkspaceShell.is-domain-active .workspace-head,
+#domainWorkspaceShell.is-domain-active .domain-sections{
+  flex:0 0 auto;
+}
+#domainWorkspaceShell.is-domain-active > section,
+#domainWorkspaceShell.is-domain-active > .placeholder,
+#domainWorkspaceShell.is-domain-active > #placeholderPage,
+#domainWorkspaceShell.is-domain-active > #writingDomainPage,
+#domainWorkspaceShell.is-domain-active > #gameDomainPage,
+#domainWorkspaceShell.is-domain-active > #engineDashboardPage,
+#domainWorkspaceShell.is-domain-active > #overviewPage,
+#domainWorkspaceShell.is-domain-active > #entryHubPage,
+#domainWorkspaceShell.is-domain-active > #systemDefinitionPage{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
 }
 #domainWorkspaceShell.is-domain-active .workspace-head{
   margin:0 2px 8px;
@@ -1653,24 +1702,29 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   overflow:visible;
 }
 /* Entry / Dashboard / Definition share the same panel boundary */
+#domainWorkspaceShell.is-domain-active #placeholderPage{
+  flex-direction:column;
+}
 #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel:not(.is-definition){
-  height:calc(100vh - 280px);
-  max-height:calc(100vh - 280px);
-  min-height:360px;
-  overflow:hidden;
+  flex:1 1 auto;
+  height:auto;
+  max-height:none;
+  min-height:0;
+  overflow-y:auto;
   padding:16px 18px;
   border:1px solid var(--line);
   border-radius:14px;
   background:linear-gradient(145deg,rgba(15,23,32,.98),rgba(10,16,23,.98));
   box-sizing:border-box;
 }
-/* Definition — same boundary; ONLY the textarea scrolls */
+/* Definition — fills the shell; ONLY the textarea scrolls */
 #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel.is-definition{
-  display:flex;
+  display:flex!important;
   flex-direction:column;
-  height:calc(100vh - 280px);
-  max-height:calc(100vh - 280px);
-  min-height:360px;
+  flex:1 1 auto;
+  height:100%;
+  max-height:none;
+  min-height:0;
   padding:0;
   border:1px solid var(--line);
   border-radius:14px;
@@ -1704,10 +1758,10 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   margin-top:12px;
   flex:0 0 auto;
 }
-/* Writing / Game content share the same vertical boundary as Definition */
+/* Writing / Game content stay inside the fixed shell; scroll if needed */
 #domainWorkspaceShell.is-domain-active #gameDomainPage,
 #domainWorkspaceShell.is-domain-active #writingDomainPage{
-  min-height:calc(100vh - 280px);
+  min-height:0;
 }
 #domainWorkspaceShell.is-domain-active #gameDomainPage .game-window,
 #domainWorkspaceShell.is-domain-active #writingDomainPage .game-window{
@@ -2644,7 +2698,7 @@ body.light-mode #osPage.os-dashboard-host{
 }
 .topbar .theme-toggle{left:178px;right:auto}
 .layout{align-items:stretch}
-.main{min-width:0;min-height:720px}
+.main{min-width:0;min-height:0}
 #osPage.os-dashboard-host{
   display:block;
   width:100%;
@@ -3073,7 +3127,7 @@ html,body,body *{font-family:Arial,Helvetica,sans-serif!important}
           </div>
         </div>
 
-<section id="writingDomainPage" style="display:block">
+<section id="writingDomainPage" style="display:none">
           <div class="game-shell">
             <div class="game-window">
               <section class="game-view active" id="writingEntryView">
@@ -4479,7 +4533,7 @@ async function renderEngineOverview(){
 
 
 function hideWorkspacePages(){
-  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","overviewPage","entryHubPage","systemDefinitionPage","mobileHomePage","gameDomainPage"].forEach(id=>{
+  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","overviewPage","entryHubPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display="none";
   });
 }
@@ -4497,7 +4551,7 @@ async function selectDomainSection(section){
     document.getElementById("dashboardTab").classList.remove("active");
     document.getElementById("analyticsTab").classList.remove("active");
     hideWorkspacePages();
-    document.getElementById("placeholderPage").style.display="block";
+    document.getElementById("placeholderPage").style.display="flex";
     document.getElementById("genericPlaceholderContent").style.display="none";
     document.getElementById("domainSectionNav").style.display="flex";
     const panel=document.getElementById("domainSectionPanel");
@@ -4535,7 +4589,7 @@ async function renderWorkspace(){
   if(osMode || !currentUser) return;
   const systemPage=document.getElementById("systemPage");
   const domainShell=document.getElementById("domainWorkspaceShell");
-  if(domainShell) domainShell.classList.toggle("is-domain-active", currentLayer===3);
+  if(domainShell) domainShell.classList.add("is-domain-active");
   if(systemPage) systemPage.classList.toggle("outcome-fit", workspaceMode==="outcomes");
   const enginePage=document.getElementById("engineDashboardPage");
   if(enginePage && workspaceMode!=="outcomes") enginePage.classList.remove("outcome-mode");
@@ -4573,7 +4627,7 @@ async function renderWorkspace(){
   const isWorkout=currentLayer===1 && systemName==="Workout";
   const isMeditation=currentLayer===1 && systemName==="Meditation";
   const isSimpleTracker=currentLayer===1 && systemName && !configuredTrackers.includes(systemName);
-  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","systemDefinitionPage","mobileHomePage","gameDomainPage"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display="none";});
+  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display="none";});
   if(isSleep){
     document.getElementById("workspaceTitle").textContent="Sleep System";
     document.getElementById("workspaceSub").textContent="";
@@ -4605,7 +4659,7 @@ async function renderWorkspace(){
   }else{
     // Productivity Engine + Domain Engine systems (and any unconfigured systems).
     const name=systemName||(layerItems[currentLayer]||[])[currentItem-1]||"System";
-    document.getElementById("placeholderPage").style.display="block";
+    document.getElementById("placeholderPage").style.display="flex";
     if(currentLayer===3){
       const nav=document.getElementById("domainSectionNav");
       const panel=document.getElementById("domainSectionPanel");
