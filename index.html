@@ -1662,7 +1662,7 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   display:flex;
   align-items:center;
   gap:6px;
-  margin:0 0 8px;
+  margin:0 0 10px;
   padding:0;
 }
 #domainWorkspaceShell.is-domain-active .domain-section-btn{
@@ -1771,7 +1771,9 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   border-radius:0;
   background:transparent;
 }
-#domainWorkspaceShell.is-domain-active #gameDomainPage .game-tabs{margin-top:0}
+#domainWorkspaceShell.is-domain-active #gameDomainPage .game-tabs,
+#domainWorkspaceShell.is-domain-active #gameDomainPage .game-toolbar,
+#domainWorkspaceShell.is-domain-active #writingDomainPage .game-toolbar{margin-top:0}
 #domainWorkspaceShell.is-domain-active #systemDefinitionPage{min-height:0}
 #domainWorkspaceShell.is-domain-active #systemDefinitionPage .card{min-height:440px}
 @media(max-width:700px){
@@ -5950,13 +5952,7 @@ async function showGameDomain(section){
   hideWorkspacePages();
   // Show placeholderPage only for the domain nav bar; hide its panel/content
   const ph = document.getElementById("placeholderPage");
-  ph.style.display = "block";
-  ph.style.textAlign = "left";
-  ph.style.padding = "0";
-  ph.style.background = "transparent";
-  ph.style.border = "0";
-  ph.style.boxShadow = "none";
-  ph.style.minHeight = "0";
+  ph.style.display = "none";
   document.getElementById("domainSectionNav").style.display = "flex";
   document.getElementById("domainSectionPanel").style.display = "none";
   document.getElementById("genericPlaceholderContent").style.display = "none";
@@ -6328,8 +6324,7 @@ async function showWritingDomain(section){
   if(shell) shell.classList.add("is-domain-active");
   hideWorkspacePages();
   const ph=document.getElementById("placeholderPage");
-  ph.style.display="block"; ph.style.textAlign="left"; ph.style.padding="0";
-  ph.style.background="transparent"; ph.style.border="0"; ph.style.boxShadow="none"; ph.style.minHeight="0";
+  ph.style.display="none";
   document.getElementById("domainSectionNav").style.display="flex";
   document.getElementById("domainSectionPanel").style.display="none";
   document.getElementById("genericPlaceholderContent").style.display="none";
