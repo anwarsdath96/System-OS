@@ -1719,7 +1719,7 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
 }
 /* Definition — fills the shell; ONLY the textarea scrolls */
 #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel.is-definition{
-  display:flex!important;
+  display:flex;
   flex-direction:column;
   flex:1 1 auto;
   height:100%;
@@ -1736,7 +1736,7 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   flex:1 1 auto;
   min-height:0;
   height:100%;
-  display:flex!important;
+  display:flex;
   flex-direction:column;
   margin:0!important;
   padding:18px 18px 14px;
@@ -2248,22 +2248,12 @@ body.light-mode #domainWorkspaceShell.is-domain-active .domain-section-btn:hover
 body.light-mode #domainWorkspaceShell.is-domain-active .domain-section-btn.active{
   background:#285b91!important;border-color:#285b91!important;color:#fff!important;
 }
-body.light-mode #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel:not(.is-definition),
-body.light-mode #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel.is-definition{
-  background:#fff!important;border-color:#dce4ed!important;
-}
+
 body.light-mode #domainWorkspaceShell.is-domain-active #domainSectionPanel,
 body.light-mode #domainWorkspaceShell.is-domain-active #placeholderPage{
   color:#34465d;
 }
-body.light-mode #domainWorkspaceShell .card,
-body.light-mode #domainWorkspaceShell .chart-card,
-body.light-mode #domainWorkspaceShell .metric,
-body.light-mode #domainWorkspaceShell .overview-card,
-body.light-mode #domainWorkspaceShell .system-card,
-body.light-mode #domainWorkspaceShell .status{
-  background:#fff!important;border-color:#dce4ed!important;color:#34465d!important;
-}
+
 body.light-mode #domainWorkspaceShell .card-title,
 body.light-mode #domainWorkspaceShell .workspace-title,
 body.light-mode #domainWorkspaceShell h1,
@@ -2435,86 +2425,6 @@ body.light-mode #gameDomainPage .game-activity-summary,
 body.light-mode #writingDomainPage .game-activity-summary{color:#34465d!important}
 body.light-mode #gameDomainPage .game-summary-item span,
 body.light-mode #writingDomainPage .game-summary-item span{color:#52647b!important}
-
-
-/* Soft grey light theme refinement — reduce pure-white surfaces while preserving contrast. */
-html.light-mode{background:#e7eaee!important}
-body.light-mode{
-  --bg:#e7eaee;--bg-2:#e1e5ea;--surface:#eef0f3;--surface-2:#e9edf1;--surface-3:#e2e6eb;
-  background:linear-gradient(180deg,#eceff2 0%,#e5e8ec 100%)!important;
-}
-body.light-mode .top-tab,
-body.light-mode .os-tab,
-body.light-mode .sidebar,
-body.light-mode .mobile-header,
-body.light-mode .mobile-nav,
-body.light-mode .mobile-drawer-panel{
-  background:linear-gradient(180deg,#f0f2f5 0%,#e9edf1 100%)!important;
-}
-body.light-mode .card,body.light-mode .chart-card,body.light-mode .metric,
-body.light-mode .overview-card,body.light-mode .health-card,
-body.light-mode .notion-menu,body.light-mode .placeholder,
-body.light-mode #domainWorkspaceShell .card,
-body.light-mode #domainWorkspaceShell .chart-card,
-body.light-mode #domainWorkspaceShell .metric,
-body.light-mode #domainWorkspaceShell .overview-card,
-body.light-mode #domainWorkspaceShell .system-card,
-body.light-mode #domainWorkspaceShell .status{
-  background:#edf0f3!important;
-}
-body.light-mode .system-card,body.light-mode .status,body.light-mode .status-grid .status,
-body.light-mode .overview-card .status,body.light-mode .mobile-home,
-body.light-mode #domainWorkspaceShell.is-domain-active #domainSectionPanel,
-body.light-mode #domainWorkspaceShell.is-domain-active #placeholderPage{
-  background:#e7ebef!important;
-}
-body.light-mode #domainWorkspaceShell.domain-workspace-shell.is-domain-active{
-  background:linear-gradient(180deg,#e5e8ec 0%,#dfe3e8 100%)!important;
-  border-color:#cbd2da!important;
-}
-body.light-mode #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel,
-body.light-mode #domainWorkspaceShell.is-domain-active #domainSectionPanel.domain-section-panel.is-definition{
-  background:#eceff2!important;border-color:#cfd6de!important;
-}
-body.light-mode #gameDomainPage .game-window,
-body.light-mode #writingDomainPage .game-window,
-body.light-mode #gameDomainPage .game-card,
-body.light-mode #writingDomainPage .game-card,
-body.light-mode #gameDomainPage .game-panel,
-body.light-mode #writingDomainPage .game-panel,
-body.light-mode #gameDomainPage .game-kpi,
-body.light-mode #writingDomainPage .game-kpi,
-body.light-mode #gameDomainPage .wd-kpi,
-body.light-mode #writingDomainPage .wd-kpi,
-body.light-mode #gameDomainPage .wd-card,
-body.light-mode #writingDomainPage .wd-card,
-body.light-mode #gameDomainPage .game-summary-item,
-body.light-mode #writingDomainPage .game-summary-item,
-body.light-mode #gameDomainPage .session-summary-card,
-body.light-mode #writingDomainPage .session-summary-card,
-body.light-mode #gameDomainPage .wd-breakdown-item,
-body.light-mode #writingDomainPage .wd-breakdown-item{
-  background:#e9edf1!important;border-color:#cfd6de!important;
-}
-body.light-mode input,body.light-mode select,body.light-mode textarea,
-body.light-mode .notion-trigger,body.light-mode .definition-note,
-body.light-mode .notion-search,body.light-mode .writing-day input,
-body.light-mode .game-field input,body.light-mode .game-field select,
-body.light-mode #gameDomainPage .game-field input,
-body.light-mode #gameDomainPage .game-field select,
-body.light-mode #writingDomainPage .game-field input,
-body.light-mode #writingDomainPage .game-field select{
-  background:#f0f2f4!important;border-color:#cbd3dc!important;
-}
-body.light-mode .small-tab,body.light-mode .logout-btn,
-body.light-mode .choice,body.light-mode .focus-btn,body.light-mode .range-btn,
-body.light-mode .view-btn,body.light-mode .def-btn,
-body.light-mode .domain-section-btn,
-body.light-mode #gameDomainPage .game-tab,body.light-mode #writingDomainPage .game-tab,
-body.light-mode #gameDomainPage .game-subtab,body.light-mode #writingDomainPage .game-subtab,
-body.light-mode #writingDomainPage .wd-subtab,body.light-mode #writingDomainPage .wd-nav-btn{
-  background:#e8ecf0!important;
-}
 
 
 /* Second grey refinement: slightly deeper neutral surfaces, still a soft light theme. */
@@ -4532,10 +4442,21 @@ async function renderEngineOverview(){
 }
 
 
+function resetDomainChrome(){
+  const nav=document.getElementById("domainSectionNav");
+  const panel=document.getElementById("domainSectionPanel");
+  const editor=document.getElementById("domainDefinitionEditor");
+  const generic=document.getElementById("genericPlaceholderContent");
+  if(nav) nav.style.display="none";
+  if(panel){ panel.style.display="none"; panel.classList.remove("is-definition"); }
+  if(editor) editor.style.display="none";
+  if(generic) generic.style.display="none";
+}
 function hideWorkspacePages(){
   ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","overviewPage","entryHubPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display="none";
   });
+  resetDomainChrome();
 }
 let domainSection="dashboard";
 async function selectDomainSection(section){
@@ -4555,7 +4476,7 @@ async function selectDomainSection(section){
     document.getElementById("genericPlaceholderContent").style.display="none";
     document.getElementById("domainSectionNav").style.display="flex";
     const panel=document.getElementById("domainSectionPanel");
-    panel.style.display="block";
+    panel.style.display="flex";
     panel.classList.add("is-definition");
     document.getElementById("domainSectionTitle").style.display="none";
     document.getElementById("domainSectionDescription").style.display="none";
@@ -4673,7 +4594,7 @@ async function renderWorkspace(){
       document.getElementById("workspaceSub").textContent="";
       // Definition only — full editor. Entry/Dashboard stay empty placeholders.
       if(domainSection==="definition"){
-        panel.style.display="block";
+        panel.style.display="flex";
         panel.classList.add("is-definition");
         generic.style.display="none";
         if(editor) editor.style.display="flex";
@@ -4682,7 +4603,7 @@ async function renderWorkspace(){
         return;
       }
       if(editor) editor.style.display="none";
-      panel.style.display="block";
+      panel.style.display="flex";
       panel.classList.remove("is-definition");
       generic.style.display="none";
       // Undeveloped Entry/Dashboard stay empty — no placeholder copy
