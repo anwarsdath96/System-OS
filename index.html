@@ -2651,6 +2651,40 @@ body.os-health-mode .sidebar-account{margin-top:auto}
 
 /* Global typography: Arial across every Personal OS workspace. */
 html,body,body *{font-family:Arial,Helvetica,sans-serif!important}
+
+/* OS Health — Notes workspace */
+#osNotes{
+  display:none;
+  height:100%;
+  min-height:0;
+  flex-direction:column;
+  padding:4px 2px 2px;
+  box-sizing:border-box;
+}
+#osPage.os-dashboard-host:has(#osNotes.is-active){display:flex;flex-direction:column}
+#osNotes.is-active{display:flex}
+#osNotes .notes-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 2px 10px;flex:0 0 auto;
+}
+#osNotes .notes-title{font-size:24px;font-weight:700;color:var(--text,#f4f7fb)}
+#osNotes .notes-card{
+  flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:14px;
+  background:linear-gradient(145deg,rgba(15,23,32,.98),rgba(10,16,23,.98));
+  padding:16px 16px 12px;box-sizing:border-box;
+}
+#osNotes textarea{
+  flex:1 1 auto;min-height:0;width:100%;resize:none;
+  border:0;background:transparent;color:var(--text,#f4f7fb);
+  font:15px/1.55 Arial,Helvetica,sans-serif;outline:none;
+}
+#osNotes .notes-save{margin-top:10px;display:flex;justify-content:flex-end;flex:0 0 auto}
+#osNotes .notes-save .save-btn.saved{background:#4fd18a;color:#102016}
+body.light-mode #osNotes .notes-title{color:#1d2b3d}
+body.light-mode #osNotes .notes-card{background:#e0e4e8;border-color:#c2cad3}
+body.light-mode #osNotes textarea{color:#243449}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3845,19 +3879,81 @@ function mountOSHomeDashboard(){
     osDashboardFrameResizeBound=true;
   }
 }
+let osSection="timeline";
+const OS_NOTES_DATE="1970-01-02";
+function renderOSSidebar(){
+  const sidebarItems=document.getElementById("sidebarItems");
+  document.getElementById("sidebarTitle").textContent="OVERVIEW";
+  sidebarItems.innerHTML="";
+  const timelineItem=addSidebarItem(sidebarItems,"Timeline",osSection==="timeline",()=>showOSTimeline());
+  if(osSection==="timeline") timelineItem.setAttribute("aria-current","page");
+  const notesItem=addSidebarItem(sidebarItems,"Notes",osSection==="notes",()=>showOSNotes());
+  if(osSection==="notes") notesItem.setAttribute("aria-current","page");
+}
+function ensureOSNotes(){
+  const host=document.getElementById("osPage");
+  let notes=document.getElementById("osNotes");
+  if(notes) return notes;
+  notes=document.createElement("div");
+  notes.id="osNotes";
+  notes.innerHTML=`<div class="notes-head"><div class="notes-title">Notes</div></div>
+    <div class="notes-card">
+      <textarea id="osNotesText" placeholder="Write a note…"></textarea>
+      <div class="notes-save"><button class="save-btn" id="osNotesSave" onclick="saveOSNotes()">Save</button></div>
+    </div>`;
+  host.appendChild(notes);
+  return notes;
+}
+async function loadOSNotes(){
+  const box=document.getElementById("osNotesText");
+  if(!box || !currentUser) return;
+  const rows=await getEntries("Notes",OS_NOTES_DATE,OS_NOTES_DATE);
+  const saved=rows[OS_NOTES_DATE];
+  box.value=saved?.text||"";
+}
+async function saveOSNotes(){
+  const box=document.getElementById("osNotesText");
+  const btn=document.getElementById("osNotesSave");
+  if(!box) return;
+  const ok=await saveSystemEntry("Notes",OS_NOTES_DATE,{text:box.value});
+  if(!ok || !btn) return;
+  btn.classList.add("saved");
+  btn.textContent="Saved";
+  setTimeout(()=>{btn.classList.remove("saved");btn.textContent="Save";},900);
+}
+function showOSTimeline(){
+  osSection="timeline";
+  renderOSSidebar();
+  const host=document.getElementById("osPage");
+  host.style.display="block";
+  const notes=document.getElementById("osNotes");
+  if(notes) notes.classList.remove("is-active");
+  if(!host.querySelector(".os-home-dashboard-frame")) mountOSHomeDashboard();
+  const frame=host.querySelector(".os-home-dashboard-frame");
+  if(frame) frame.style.display="block";
+}
+async function showOSNotes(){
+  osSection="notes";
+  renderOSSidebar();
+  const host=document.getElementById("osPage");
+  host.style.display="block";
+  host.classList.add("os-dashboard-host");
+  const frame=host.querySelector(".os-home-dashboard-frame");
+  if(frame) frame.style.display="none";
+  const notes=ensureOSNotes();
+  notes.classList.add("is-active");
+  await loadOSNotes();
+}
 function selectOS(){
   document.body.classList.add("os-health-mode");
   osMode=true;
+  osSection="timeline";
   document.querySelectorAll(".top-tab").forEach(x=>x.classList.remove("active"));
   document.querySelector(".os-tab").classList.add("active");
-  document.getElementById("sidebarTitle").textContent="OVERVIEW";
-  const sidebarItems=document.getElementById("sidebarItems");
-  sidebarItems.innerHTML="";
-  const timelineItem=addSidebarItem(sidebarItems,"Timeline",true,()=>{});
-  timelineItem.setAttribute("aria-current","page");
   document.getElementById("systemPage").style.display="none";
   const osPage=document.getElementById("osPage");
   osPage.style.display="block";
+  renderOSSidebar();
   mountOSHomeDashboard();
 }
 function sidebarIcon(name){
@@ -3889,7 +3985,9 @@ function sidebarIcon(name){
     Writing:'<path d="M4 20h4l10-10a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 7.5l3 3"/>',
     Speaking:'<path d="M12 3a4 4 0 0 1 4 4v4a4 4 0 0 1-8 0V7a4 4 0 0 1 4-4z"/><path d="M5 12a7 7 0 0 0 14 0M12 19v2M9 21h6"/>',
     Upskilling:'<path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/>',
-    Projects:'<path d="M9 4h6l1 2h4v14H4V6h4l1-2z"/><path d="M9 12h6M9 15h4"/>'
+    Projects:'<path d="M9 4h6l1 2h4v14H4V6h4l1-2z"/><path d="M9 12h6M9 15h4"/>',
+    Notes:'<path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6M8 13h8M8 17h6"/>',
+    Timeline:'<circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/>'
   };
   return `<span class="item-icon"><svg viewBox="0 0 24 24">${paths[name]||'<circle cx="12" cy="12" r="3"/>'}</svg></span>`;
 }
