@@ -2708,6 +2708,9 @@ body.light-mode #osNotes textarea{color:#243449}
 body.light-mode *{scrollbar-color:rgba(70,90,115,.4) transparent}
 body.light-mode *::-webkit-scrollbar-thumb{background:rgba(70,90,115,.35);background-clip:padding-box}
 body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);background-clip:padding-box}
+
+#personalSectionNav{margin:0 0 12px}
+#domainWorkspaceShell.is-domain-active #personalSectionNav{margin:0 0 12px}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2813,6 +2816,10 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
               <button class="range-btn dash-range-30" onclick="setDashRange(30)">Last 30 days</button>
             </div>
           </div>
+        </div>
+        <div id="personalSectionNav" class="domain-sections" style="display:none">
+          <button class="domain-section-btn" data-personal-section="dashboard" onclick="selectPersonalSection('dashboard')">Dashboard</button>
+          <button class="domain-section-btn" data-personal-section="definition" onclick="selectPersonalSection('definition')">Definition</button>
         </div>
 
         <section id="todayPage">
@@ -2965,10 +2972,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
         </section>
 
         <section id="dashboardPage" style="display:none">
-          <div class="dash-toolbar">
-            <button class="def-btn" onclick="openSystemDefinition('Sleep')">System Definition</button>
-            <div></div>
-          </div>
           <div class="metrics">
             <div class="metric">
               <div class="metric-label" id="avgHoursLabel">AVG SLEEP · 7 DAYS</div>
@@ -3058,7 +3061,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
 
         <section id="engineDashboardPage" style="display:none">
           <div class="dash-toolbar">
-            <button class="def-btn" id="engineDefBtn" onclick="openSystemDefinition()">System Definition</button>
             <div class="range-toggle">
               <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">Last 7 days</button>
               <button class="range-btn dash-range-30" onclick="setDashRange(30)">Last 30 days</button>
@@ -3084,9 +3086,7 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
           </div>
           <div class="save-row domain-def-save" id="domainDefSaveRow" style="display:none"><button class="save-btn" id="saveDomainDefinitionBtn" onclick="saveSystemDefinition()" title="Save definition">Save</button></div>
           <div id="genericPlaceholderContent">
-            <div class="dash-toolbar" style="justify-content:flex-start;margin-bottom:18px">
-              <button class="def-btn" id="placeholderDefBtn" onclick="openSystemDefinition()">System Definition</button>
-            </div>
+
             <strong id="placeholderTitle">System</strong>
             <div id="placeholderBody">This system workspace is ready to be configured. Open System Definition to describe what this system is.</div>
           </div>
@@ -4634,6 +4634,27 @@ async function selectDomainSection(section){
   renderSidebar();
   renderWorkspace();
 }
+function showPersonalNav(section){
+  const nav=document.getElementById("personalSectionNav");
+  if(!nav) return;
+  nav.style.display="flex";
+  nav.querySelectorAll("[data-personal-section]").forEach(b=>b.classList.toggle("active", b.dataset.personalSection===section));
+}
+function hidePersonalNav(){
+  const nav=document.getElementById("personalSectionNav");
+  if(nav) nav.style.display="none";
+}
+async function selectPersonalSection(section){
+  if(currentLayer!==1) return;
+  currentPage=section;
+  workspaceMode="system";
+  if(section==="definition"){
+    await openSystemDefinition(personalSystemName(currentItem));
+    showPersonalNav("definition");
+    return;
+  }
+  await renderWorkspace();
+}
 async function renderWorkspace(){
   if(osMode || !currentUser) return;
   const systemPage=document.getElementById("systemPage");
@@ -4647,6 +4668,7 @@ async function renderWorkspace(){
   const systemName=currentItem>=1?personalSystemName(currentItem):null;
   const isSleep=currentLayer===1 && systemName==="Sleep";
   hideWorkspacePages();
+  hidePersonalNav();
   if(workspaceMode==="overview" || (workspaceMode!=="entry" && workspaceMode!=="outcomes" && currentItem===0 && workspaceMode!=="system")){
     document.getElementById("overviewPage").style.display="block";
     document.getElementById("workspaceTitle").textContent=overviewConfig(currentLayer).title;
@@ -4671,6 +4693,7 @@ async function renderWorkspace(){
   }
   if(currentPage==="definition"){
     await openSystemDefinition(systemName||definitionSystem||currentEntrySystem());
+    if(currentLayer===1) showPersonalNav("definition");
     return;
   }
   const isWorkout=currentLayer===1 && systemName==="Workout";
@@ -4685,14 +4708,15 @@ async function renderWorkspace(){
     else document.getElementById("analyticsPage").style.display="block";
     await renderDateStrip("dateStrip"); await loadSelectedDate();
     if(currentPage==="dashboard"||currentPage==="analytics") await renderDashboard();
+    showPersonalNav("dashboard");
   }else if(isWorkout){
     document.getElementById("workspaceTitle").textContent="Workout"; document.getElementById("workspaceSub").textContent="";
     if(currentPage==="entry"){document.getElementById("workoutPage").style.display="block";await renderDateStrip("workoutDateStrip");await loadWorkoutDate();}
-    else{document.getElementById("engineDashboardPage").style.display="block";await renderEngineDashboard("Workout");}
+    else{document.getElementById("engineDashboardPage").style.display="block";await renderEngineDashboard("Workout");showPersonalNav("dashboard");}
   }else if(isMeditation){
     document.getElementById("workspaceTitle").textContent="Meditation"; document.getElementById("workspaceSub").textContent="";
     if(currentPage==="entry"){document.getElementById("meditationPage").style.display="block";await renderDateStrip("meditationDateStrip");await loadMeditationDate();}
-    else{document.getElementById("engineDashboardPage").style.display="block";await renderEngineDashboard("Meditation");}
+    else{document.getElementById("engineDashboardPage").style.display="block";await renderEngineDashboard("Meditation");showPersonalNav("dashboard");}
   }else if(isSimpleTracker){
     document.getElementById("workspaceTitle").textContent=systemName;
     document.getElementById("workspaceSub").textContent="";
@@ -4704,6 +4728,7 @@ async function renderWorkspace(){
     }else{
       document.getElementById("engineDashboardPage").style.display="block";
       await renderEngineDashboard(systemName);
+      showPersonalNav("dashboard");
     }
   }else{
     // Productivity Engine + Domain Engine systems (and any unconfigured systems).
