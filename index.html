@@ -3075,6 +3075,7 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
             <button class="domain-section-btn" data-domain-section="entry" onclick="selectDomainSection('entry')">Entry</button>
             <button class="domain-section-btn" data-domain-section="dashboard" onclick="selectDomainSection('dashboard')">Dashboard</button>
             <button class="domain-section-btn" data-domain-section="definition" onclick="selectDomainSection('definition')">Definition</button>
+            <button class="domain-section-btn" data-domain-section="notes" id="domainNotesBtn" onclick="selectDomainSection('notes')" style="display:none">Notes</button>
           </div>
           <div id="domainSectionPanel" class="domain-section-panel" style="display:none">
             <strong id="domainSectionTitle" style="display:none">Money</strong>
@@ -4585,12 +4586,44 @@ function hideWorkspacePages(){
   resetDomainChrome();
 }
 let domainSection="dashboard";
+function syncDomainNotesBtn(){
+  const btn=document.getElementById("domainNotesBtn");
+  if(!btn) return;
+  const name=(layerItems[3]||[])[currentItem-1]||"";
+  btn.style.display=(currentLayer===3 && name==="Game")?"inline-flex":"none";
+}
 async function selectDomainSection(section){
   domainSection=section;
+  syncDomainNotesBtn();
   const isDomain = currentLayer===3 && currentItem>0;
   document.querySelectorAll("#domainSectionNav .domain-section-btn").forEach(btn=>{
     btn.classList.toggle("active", btn.dataset.domainSection===section);
   });
+  if(section==="notes" && isDomain){
+    const name=(layerItems[3]||[])[currentItem-1]||"Game";
+    workspaceMode="system";
+    currentPage="notes";
+    hideWorkspacePages();
+    document.getElementById("placeholderPage").style.display="flex";
+    document.getElementById("genericPlaceholderContent").style.display="none";
+    document.getElementById("domainSectionNav").style.display="flex";
+    const panel=document.getElementById("domainSectionPanel");
+    panel.style.display="flex";
+    panel.classList.add("is-definition");
+    document.getElementById("domainSectionTitle").style.display="none";
+    document.getElementById("domainSectionDescription").style.display="none";
+    document.getElementById("domainDefinitionEditor").style.display="flex";
+    const defSave=document.getElementById("domainDefSaveRow"); if(defSave) defSave.style.display="flex";
+    document.getElementById("workspaceTitle").textContent=name;
+    document.getElementById("workspaceSub").textContent="";
+    const rows=await getEntries(name+" Notes",NOTES_DATE,NOTES_DATE);
+    const saved=rows[NOTES_DATE];
+    document.getElementById("domainDefinitionText").value=saved?.text||"";
+    document.getElementById("domainDefinitionText").placeholder="Write notes for "+name+"…";
+    const btn=document.getElementById("saveDomainDefinitionBtn");
+    if(btn){ btn.classList.remove("saved"); btn.onclick=saveDomainNotes; }
+    return;
+  }
   if(section==="definition" && isDomain){
     definitionSystem=(layerItems[3]||[])[currentItem-1]||"Money";
     workspaceMode="system";
@@ -4614,12 +4647,18 @@ async function selectDomainSection(section){
     const saved=rows[DEFINITION_DATE];
     document.getElementById("domainDefinitionText").value=saved?.text||(Array.isArray(saved?.bullets)?saved.bullets.join("\n"):"");
     const btn=document.getElementById("saveDomainDefinitionBtn");
-    if(btn) btn.classList.remove("saved");
+    if(btn){ btn.classList.remove("saved"); btn.onclick=saveSystemDefinition; }
+    const ta=document.getElementById("domainDefinitionText");
+    if(ta) ta.placeholder="Describe this domain system. One point per line.";
     return;
   }
   const editor=document.getElementById("domainDefinitionEditor");
   if(editor) editor.style.display="none";
   const defSave=document.getElementById("domainDefSaveRow"); if(defSave) defSave.style.display="none";
+  const saveBtn=document.getElementById("saveDomainDefinitionBtn");
+  if(saveBtn) saveBtn.onclick=saveSystemDefinition;
+  const ta=document.getElementById("domainDefinitionText");
+  if(ta) ta.placeholder="Describe this domain system. One point per line.";
   const panel=document.getElementById("domainSectionPanel");
   if(panel) panel.classList.remove("is-definition");
   const generic=document.getElementById("genericPlaceholderContent");
@@ -4974,6 +5013,7 @@ async function saveSimpleTracker(){
 }
 
 const DEFINITION_DATE="1970-01-01";
+const NOTES_DATE="1970-01-03";
 let definitionSystem="";
 async function openSystemDefinition(name){
   definitionSystem=name||currentEntrySystem();
@@ -4991,6 +5031,13 @@ async function openSystemDefinition(name){
   document.getElementById("systemDefinitionText").value=text;
   const btn=document.getElementById("saveDefinitionBtn");
   if(btn) btn.classList.remove("saved");
+}
+async function saveDomainNotes(){
+  const name=(layerItems[3]||[])[currentItem-1]||"Game";
+  const text=document.getElementById("domainDefinitionText").value;
+  if(await saveSystemEntry(name+" Notes",NOTES_DATE,{text})){
+    flashSaved(document.getElementById("saveDomainDefinitionBtn"));
+  }
 }
 async function saveSystemDefinition(){
   if(!definitionSystem) return;
@@ -6098,6 +6145,7 @@ function gameRenderActivitySummary(arr){
 }
 
 async function showGameDomain(section){
+  if(typeof syncDomainNotesBtn==="function") syncDomainNotesBtn();
   const domainShell=document.getElementById("domainWorkspaceShell");
   if(domainShell) domainShell.classList.add("is-domain-active");
   hideWorkspacePages();
@@ -6145,6 +6193,7 @@ selectDomainSection = async function(section){
   const isDomain = currentLayer === 3 && currentItem > 0;
   const name = (layerItems[3] || [])[currentItem - 1] || "";
   if(isDomain && name === "Game" && (section === "entry" || section === "dashboard")){
+    syncDomainNotesBtn();
     tabEl("dashboardTab").classList.toggle("active", section === "dashboard");
     tabEl("analyticsTab").classList.remove("active");
     await showGameDomain(section);
@@ -6167,8 +6216,8 @@ renderWorkspace = async function(){
     let section = domainSection;
     if(currentPage === "dashboard" || currentPage === "analytics") section = "dashboard";
     if(currentPage === "entry") section = "entry";
-    if(section === "definition"){
-      // fall through to original for definition
+    if(section === "definition" || section === "notes"){
+      // fall through to original for definition / notes
     } else if(section === "entry" || section === "dashboard"){
       await showGameDomain(section);
       return;
