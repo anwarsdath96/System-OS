@@ -1427,6 +1427,7 @@ input:focus,select:focus{border-color:rgba(96,164,239,.65);box-shadow:0 0 0 3px 
   #domainWorkspaceShell.is-domain-active > #placeholderPage,
   #domainWorkspaceShell.is-domain-active > #writingDomainPage,
   #domainWorkspaceShell.is-domain-active > #gameDomainPage,
+  #domainWorkspaceShell.is-domain-active > #fitnessDomainPage,
   #domainWorkspaceShell.is-domain-active > #engineDashboardPage,
   #domainWorkspaceShell.is-domain-active > #overviewPage,
   #domainWorkspaceShell.is-domain-active > #entryHubPage,
@@ -2711,6 +2712,84 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
 
 #personalSectionNav{margin:0 0 12px}
 #domainWorkspaceShell.is-domain-active #personalSectionNav{margin:0 0 12px}
+
+/* =========================================================
+   FITNESS DOMAIN — Entry sub-views
+   ========================================================= */
+#fitnessDomainPage{display:none}
+#fitnessDomainPage .fitness-shell{max-width:100%}
+#fitnessDomainPage .fitness-window{
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:linear-gradient(180deg,rgba(13,20,28,.94),rgba(9,15,21,.94));
+  padding:20px 22px 18px;
+  min-height:0;
+  box-sizing:border-box;
+}
+#fitnessDomainPage .fitness-subtabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+#fitnessDomainPage .fitness-subtab{
+  border:1px solid var(--line-strong);
+  background:var(--surface-2);
+  color:var(--text-2);
+  border-radius:9px;
+  padding:9px 16px;
+  font-weight:650;
+  cursor:pointer;
+  font-size:12px;
+}
+#fitnessDomainPage .fitness-subtab.active{
+  background:#1c3b63;
+  border-color:#528bd0;
+  color:#fff;
+}
+#fitnessDomainPage .fitness-view{display:none}
+#fitnessDomainPage .fitness-view.active{display:block}
+#fitnessDomainPage .fitness-panel{display:none}
+#fitnessDomainPage .fitness-panel.active{display:block}
+#fitnessDomainPage .fitness-card{
+  background:linear-gradient(145deg,#111d2c,#0e1825);
+  border:1px solid #20334a;
+  border-radius:12px;
+  padding:20px;
+  min-height:280px;
+}
+#fitnessDomainPage h3.fitness-h3{
+  font-size:16px;
+  margin:0 0 8px;
+  color:var(--text);
+}
+#fitnessDomainPage .fitness-placeholder{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+  margin-top:12px;
+}
+#fitnessDomainPage .fitness-note{
+  width:100%;
+  min-height:220px;
+  resize:vertical;
+  padding:14px 16px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#080e14;
+  color:#edf3f8;
+  font-size:14px;
+  line-height:1.6;
+  outline:none;
+  margin-top:8px;
+  box-sizing:border-box;
+}
+#fitnessDomainPage .fitness-note:focus{
+  border-color:rgba(101,169,255,.55);
+  box-shadow:0 0 0 3px rgba(72,134,204,.08);
+}
+#fitnessDomainPage .save-row{margin-top:14px;display:flex;justify-content:flex-end;}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3394,6 +3473,73 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
           </div>
         </section>
 
+        <section id="fitnessDomainPage" style="display:none">
+          <div class="fitness-shell">
+            <div class="fitness-window">
+              <section id="fitnessEntryView" class="fitness-view active">
+                <div class="fitness-subtabs" id="fitnessSubtabs">
+                  <button type="button" class="fitness-subtab active" data-fitness="resistance">Resistance</button>
+                  <button type="button" class="fitness-subtab" data-fitness="cardio">Cardio</button>
+                  <button type="button" class="fitness-subtab" data-fitness="calisthenics">Calisthenics</button>
+                  <button type="button" class="fitness-subtab" data-fitness="swimming">Swimming</button>
+                  <button type="button" class="fitness-subtab" data-fitness="sports">Sports</button>
+                </div>
+                <div id="fitnessResistancePanel" class="fitness-panel active">
+                  <div class="fitness-card">
+                    <h3 class="fitness-h3">Resistance</h3>
+                    <textarea id="fitnessResistanceText" class="fitness-note" placeholder="Notes for Resistance training…"></textarea>
+                    <div class="save-row">
+                      <button type="button" class="save-btn" id="saveFitnessResistance" onclick="saveFitnessNote('Resistance')">Save</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="fitnessCardioPanel" class="fitness-panel">
+                  <div class="fitness-card">
+                    <h3 class="fitness-h3">Cardio</h3>
+                    <textarea id="fitnessCardioText" class="fitness-note" placeholder="Notes for Cardio…"></textarea>
+                    <div class="save-row">
+                      <button type="button" class="save-btn" id="saveFitnessCardio" onclick="saveFitnessNote('Cardio')">Save</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="fitnessCalisthenicsPanel" class="fitness-panel">
+                  <div class="fitness-card">
+                    <h3 class="fitness-h3">Calisthenics</h3>
+                    <textarea id="fitnessCalisthenicsText" class="fitness-note" placeholder="Notes for Calisthenics…"></textarea>
+                    <div class="save-row">
+                      <button type="button" class="save-btn" id="saveFitnessCalisthenics" onclick="saveFitnessNote('Calisthenics')">Save</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="fitnessSwimmingPanel" class="fitness-panel">
+                  <div class="fitness-card">
+                    <h3 class="fitness-h3">Swimming</h3>
+                    <textarea id="fitnessSwimmingText" class="fitness-note" placeholder="Notes for Swimming…"></textarea>
+                    <div class="save-row">
+                      <button type="button" class="save-btn" id="saveFitnessSwimming" onclick="saveFitnessNote('Swimming')">Save</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="fitnessSportsPanel" class="fitness-panel">
+                  <div class="fitness-card">
+                    <h3 class="fitness-h3">Sports</h3>
+                    <textarea id="fitnessSportsText" class="fitness-note" placeholder="Notes for Sports…"></textarea>
+                    <div class="save-row">
+                      <button type="button" class="save-btn" id="saveFitnessSports" onclick="saveFitnessNote('Sports')">Save</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section id="fitnessDashboardView" class="fitness-view">
+                <div class="fitness-card">
+                  <h3 class="fitness-h3">Fitness Dashboard</h3>
+                  <p class="fitness-placeholder">Dashboard views for Resistance, Cardio, Calisthenics, Swimming, and Sports will be built here.</p>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
         <section id="systemDefinitionPage" style="display:none">
           <div class="card">
             <div class="card-title" id="systemDefinitionTitle">System Definition</div>
@@ -3822,6 +3968,7 @@ async function getEntriesExact(systemName, startDate=null, endDate=null){
 function engineForSystem(systemName){
   if(systemName==="Outcomes") return "Personal Engine";
   if(systemName==="Productivity Outcomes") return "Productivity Engine";
+  if(systemName.startsWith("Fitness ")) return "Domain Engine";
   if(layerItems[1].includes(systemName)) return "Personal Engine";
   if(layerItems[2].includes(systemName)) return "Productivity Engine";
   if(layerItems[3].includes(systemName)) return "Domain Engine";
@@ -4580,7 +4727,7 @@ function resetDomainChrome(){
   if(generic) generic.style.display="none";
 }
 function hideWorkspacePages(){
-  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","overviewPage","entryHubPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage"].forEach(id=>{
+  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","overviewPage","entryHubPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage","fitnessDomainPage"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display="none";
   });
   resetDomainChrome();
@@ -4738,7 +4885,7 @@ async function renderWorkspace(){
   const isWorkout=currentLayer===1 && systemName==="Workout";
   const isMeditation=currentLayer===1 && systemName==="Meditation";
   const isSimpleTracker=currentLayer===1 && systemName && !configuredTrackers.includes(systemName);
-  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display="none";});
+  ["todayPage","dashboardPage","analyticsPage","workoutPage","meditationPage","simpleTrackerPage","engineDashboardPage","placeholderPage","systemDefinitionPage","mobileHomePage","gameDomainPage","writingDomainPage","fitnessDomainPage"].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display="none";});
   if(isSleep){
     document.getElementById("workspaceTitle").textContent="Sleep System";
     document.getElementById("workspaceSub").textContent="";
@@ -6575,6 +6722,156 @@ renderWorkspace = async function(){
   resetWritingPlaceholderStyles();
   return renderWorkspaceWithWriting();
 };
+
+
+// Fitness Domain Workspace integration
+function resetFitnessPlaceholderStyles(){
+  const ph=document.getElementById("placeholderPage");
+  if(!ph) return;
+  ph.style.textAlign=""; ph.style.padding=""; ph.style.background="";
+  ph.style.border=""; ph.style.boxShadow=""; ph.style.minHeight="";
+}
+function showFitnessSubView(key){
+  document.querySelectorAll("#fitnessDomainPage .fitness-subtab").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.fitness===key);
+  });
+  document.querySelectorAll("#fitnessDomainPage .fitness-panel").forEach(panel=>{
+    panel.classList.remove("active");
+  });
+  const map={
+    resistance:"fitnessResistancePanel",
+    cardio:"fitnessCardioPanel",
+    calisthenics:"fitnessCalisthenicsPanel",
+    swimming:"fitnessSwimmingPanel",
+    sports:"fitnessSportsPanel"
+  };
+  const id=map[key];
+  if(id){
+    const el=document.getElementById(id);
+    if(el) el.classList.add("active");
+  }
+}
+function initFitnessSubtabs(){
+  const tabs=document.getElementById("fitnessSubtabs");
+  if(!tabs || tabs.dataset.bound) return;
+  tabs.dataset.bound="1";
+  tabs.addEventListener("click", e=>{
+    const btn=e.target.closest(".fitness-subtab");
+    if(!btn) return;
+    showFitnessSubView(btn.dataset.fitness);
+  });
+}
+
+const FITNESS_NOTE_DATE = "1970-01-04";
+const FITNESS_NOTE_KEYS = ["Resistance","Cardio","Calisthenics","Swimming","Sports"];
+function fitnessNoteSystem(key){ return "Fitness " + key; }
+function fitnessNoteTextId(key){ return "fitness" + key + "Text"; }
+function fitnessNoteSaveBtnId(key){ return "saveFitness" + key; }
+
+async function loadFitnessNotes(){
+  if(!currentUser) return;
+  for(const key of FITNESS_NOTE_KEYS){
+    const system = fitnessNoteSystem(key);
+    const rows = await getEntries(system, FITNESS_NOTE_DATE, FITNESS_NOTE_DATE);
+    const saved = rows[FITNESS_NOTE_DATE];
+    const box = document.getElementById(fitnessNoteTextId(key));
+    if(box) box.value = (saved && typeof saved.text === "string") ? saved.text : "";
+    const btn = document.getElementById(fitnessNoteSaveBtnId(key));
+    if(btn) btn.classList.remove("saved");
+  }
+}
+
+async function saveFitnessNote(key){
+  if(!currentUser){ alert("Please log in first."); return; }
+  const box = document.getElementById(fitnessNoteTextId(key));
+  if(!box) return;
+  const text = box.value;
+  const ok = await saveSystemEntry(fitnessNoteSystem(key), FITNESS_NOTE_DATE, {text});
+  if(ok){
+    const btn = document.getElementById(fitnessNoteSaveBtnId(key));
+    if(btn) flashSaved(btn);
+  }
+}
+
+async function showFitnessDomain(section){
+  const shell=document.getElementById("domainWorkspaceShell");
+  if(shell) shell.classList.add("is-domain-active");
+  hideWorkspacePages();
+  const ph=document.getElementById("placeholderPage");
+  if(ph) ph.style.display="none";
+  const nav=document.getElementById("domainSectionNav");
+  if(nav) nav.style.display="flex";
+  const panel=document.getElementById("domainSectionPanel");
+  if(panel) panel.style.display="none";
+  const generic=document.getElementById("genericPlaceholderContent");
+  if(generic) generic.style.display="none";
+  const game=document.getElementById("gameDomainPage");
+  if(game) game.style.display="none";
+  const writing=document.getElementById("writingDomainPage");
+  if(writing) writing.style.display="none";
+  const fitness=document.getElementById("fitnessDomainPage");
+  if(fitness) fitness.style.display=section==="definition"?"none":"block";
+  document.getElementById("workspaceTitle").textContent="Fitness";
+  document.getElementById("workspaceSub").textContent="";
+  document.querySelectorAll("#domainSectionNav .domain-section-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.domainSection===section);
+  });
+  const entryView=document.getElementById("fitnessEntryView");
+  const dashView=document.getElementById("fitnessDashboardView");
+  if(entryView) entryView.classList.toggle("active", section==="entry");
+  if(dashView) dashView.classList.toggle("active", section==="dashboard");
+  if(section==="entry"){
+    initFitnessSubtabs();
+    // Ensure one is active
+    const active=document.querySelector("#fitnessDomainPage .fitness-subtab.active");
+    if(active) showFitnessSubView(active.dataset.fitness);
+    else showFitnessSubView("resistance");
+    await loadFitnessNotes();
+  }
+  if(section==="definition"){
+    if(fitness) fitness.style.display="none";
+  }
+}
+const selectDomainSectionWithFitness = selectDomainSection;
+selectDomainSection = async function(section){
+  const isFitness=currentLayer===3 && ((layerItems[3]||[])[currentItem-1]||"")==="Fitness";
+  if(isFitness && section==="definition"){
+    domainSection=section;
+    workspaceMode="system";
+    currentPage="definition";
+    const fitness=document.getElementById("fitnessDomainPage");
+    if(fitness) fitness.style.display="none";
+    return selectDomainSectionWithFitness("definition");
+  }
+  if(isFitness && ["entry","dashboard"].includes(section)){
+    domainSection=section; workspaceMode="system"; currentPage=section;
+    tabEl("dashboardTab").classList.toggle("active", section==="dashboard");
+    tabEl("analyticsTab").classList.remove("active");
+    await showFitnessDomain(section);
+    return;
+  }
+  const fitness=document.getElementById("fitnessDomainPage");
+  if(fitness) fitness.style.display="none";
+  resetFitnessPlaceholderStyles();
+  return selectDomainSectionWithFitness(section);
+};
+const renderWorkspaceWithFitness = renderWorkspace;
+renderWorkspace = async function(){
+  const isFitness=!osMode && currentUser && currentLayer===3 &&
+    (((layerItems[3]||[])[currentItem-1]||"")==="Fitness") && workspaceMode==="system";
+  if(isFitness){
+    let section=domainSection;
+    if(currentPage==="dashboard" || currentPage==="analytics") section="dashboard";
+    if(currentPage==="entry") section="entry";
+    await showFitnessDomain(section);
+    return;
+  }
+  const fitness=document.getElementById("fitnessDomainPage");
+  if(fitness) fitness.style.display="none";
+  resetFitnessPlaceholderStyles();
+  return renderWorkspaceWithFitness();
+};
+
 
 let savedTheme="dark";
 try{savedTheme=localStorage.getItem("personalOS_theme")||"dark";}catch(e){}
