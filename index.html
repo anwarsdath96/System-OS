@@ -2790,6 +2790,64 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
 }
 #fitnessDomainPage .save-row{margin-top:14px;display:flex;justify-content:flex-end;}
 
+
+
+/* Systems OS — Fitness Entry workspace sizing (scoped) */
+#fitnessDomainPage[style*="display: block"]{
+  display:flex!important;
+  flex:1 1 auto;
+  min-height:0;
+  height:auto;
+  flex-direction:column;
+}
+@media (min-width:769px){
+  #fitnessDomainPage[style*="display: block"] .fitness-shell{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  #fitnessDomainPage[style*="display: block"] .fitness-window{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  #fitnessDomainPage[style*="display: block"] #fitnessEntryView{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  #fitnessDomainPage .fitness-subtabs{flex:0 0 auto;gap:6px;margin-bottom:14px;}
+  #fitnessDomainPage .fitness-subtab{padding:7px 12px;}
+  #fitnessDomainPage .fitness-panel.active{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  #fitnessDomainPage .fitness-card{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  #fitnessDomainPage .fitness-note{flex:1 1 auto;width:100%;height:auto;min-height:0;max-height:none;resize:none;}
+  #fitnessDomainPage .save-row{margin-top:14px;flex:0 0 auto;justify-content:flex-end;}
+}
+
+
+/* Fitness Domain — Light Mode consistency fix (scoped only) */
+body.light-mode #fitnessDomainPage .fitness-window{
+  background:linear-gradient(180deg,#f7f9fc,#edf2f7)!important;
+  border-color:#d3dde8!important;
+}
+body.light-mode #fitnessDomainPage .fitness-card{
+  background:linear-gradient(145deg,#ffffff,#f5f8fb)!important;
+  border-color:#d3dde8!important;
+}
+body.light-mode #fitnessDomainPage .fitness-subtab{
+  background:#f6f8fb!important;color:#52647b!important;border-color:#d3dde8!important;
+}
+body.light-mode #fitnessDomainPage .fitness-subtab:hover{
+  background:#edf4fb!important;color:#243b58!important;
+}
+body.light-mode #fitnessDomainPage .fitness-subtab.active{
+  background:#285b91!important;color:#fff!important;border-color:#285b91!important;
+}
+body.light-mode #fitnessDomainPage .fitness-note{
+  background:#fff!important;color:#243449!important;border-color:#d3dde8!important;
+}
+body.light-mode #fitnessDomainPage .fitness-note::placeholder{color:#9aa7b7!important}
+body.light-mode #fitnessDomainPage .fitness-note:focus{
+  border-color:rgba(101,169,255,.65)!important;
+  box-shadow:0 0 0 3px rgba(72,134,204,.10)!important;
+}
+body.light-mode #fitnessDomainPage .save-row .save-btn,
+body.light-mode #fitnessDomainPage .save-row button{
+  background:#e8eef6!important;color:#1d3553!important;border-color:#c7d5e5!important;
+}
+body.light-mode #fitnessDomainPage .save-row .save-btn:hover,
+body.light-mode #fitnessDomainPage .save-row button:hover{
+  background:#dce9f8!important;
+}
+
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3486,7 +3544,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
                 </div>
                 <div id="fitnessResistancePanel" class="fitness-panel active">
                   <div class="fitness-card">
-                    <h3 class="fitness-h3">Resistance</h3>
                     <textarea id="fitnessResistanceText" class="fitness-note" placeholder="Notes for Resistance training…"></textarea>
                     <div class="save-row">
                       <button type="button" class="save-btn" id="saveFitnessResistance" onclick="saveFitnessNote('Resistance')">Save</button>
@@ -3495,7 +3552,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
                 </div>
                 <div id="fitnessCardioPanel" class="fitness-panel">
                   <div class="fitness-card">
-                    <h3 class="fitness-h3">Cardio</h3>
                     <textarea id="fitnessCardioText" class="fitness-note" placeholder="Notes for Cardio…"></textarea>
                     <div class="save-row">
                       <button type="button" class="save-btn" id="saveFitnessCardio" onclick="saveFitnessNote('Cardio')">Save</button>
@@ -3504,7 +3560,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
                 </div>
                 <div id="fitnessCalisthenicsPanel" class="fitness-panel">
                   <div class="fitness-card">
-                    <h3 class="fitness-h3">Calisthenics</h3>
                     <textarea id="fitnessCalisthenicsText" class="fitness-note" placeholder="Notes for Calisthenics…"></textarea>
                     <div class="save-row">
                       <button type="button" class="save-btn" id="saveFitnessCalisthenics" onclick="saveFitnessNote('Calisthenics')">Save</button>
@@ -3513,7 +3568,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
                 </div>
                 <div id="fitnessSwimmingPanel" class="fitness-panel">
                   <div class="fitness-card">
-                    <h3 class="fitness-h3">Swimming</h3>
                     <textarea id="fitnessSwimmingText" class="fitness-note" placeholder="Notes for Swimming…"></textarea>
                     <div class="save-row">
                       <button type="button" class="save-btn" id="saveFitnessSwimming" onclick="saveFitnessNote('Swimming')">Save</button>
@@ -3522,7 +3576,6 @@ body.light-mode *::-webkit-scrollbar-thumb:hover{background:rgba(70,90,115,.55);
                 </div>
                 <div id="fitnessSportsPanel" class="fitness-panel">
                   <div class="fitness-card">
-                    <h3 class="fitness-h3">Sports</h3>
                     <textarea id="fitnessSportsText" class="fitness-note" placeholder="Notes for Sports…"></textarea>
                     <div class="save-row">
                       <button type="button" class="save-btn" id="saveFitnessSports" onclick="saveFitnessNote('Sports')">Save</button>
