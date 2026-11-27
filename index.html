@@ -4704,17 +4704,15 @@ function scoreSystemDay(systemName, entry){
   }
   if(systemName==="Workout"){
     let score=0;
-    if(entry.gym==="yes") score+=55;
-    if(entry.cardio==="yes"){
-      const mins=Number(entry.cardioTime||0);
-      score+=clampScore(Math.max(15,(mins/60)*45));
-    }
+    if(entry.gym==="yes") score+=34;
+    if(entry.cardio==="yes") score+=33;
+    if(entry.calisthenics==="yes") score+=33;
     return clampScore(score);
   }
   if(systemName==="Meditation"){
     let score=0;
-    if(entry.morning==="yes") score+=40+clampScore((Number(entry.morningTime||0)/20)*10);
-    if(entry.night==="yes") score+=40+clampScore((Number(entry.nightTime||0)/20)*10);
+    if(entry.morning==="yes") score+=50;
+    if(entry.night==="yes") score+=50;
     return clampScore(score);
   }
   if(entry.value==="yes") return 100;
