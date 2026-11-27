@@ -3676,7 +3676,7 @@ const supabaseClient = (SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.inc
 const qualityNames = {1:"Worst",2:"Bad",3:"Okay",4:"Good",5:"Best"};
 const qualityPills = {1:"pill-worst",2:"pill-bad",3:"pill-okay",4:"pill-good",5:"pill-best"};
 const personalGroups = [
-  {title:"Systems", blocks:[["Morning","Night"],["Sleep","Workout","Meditation","Diet","NoPMO"],["Scrolling","Journaling","Reading","Calisthenics"]]},
+  {title:"Systems", blocks:[["Morning","Night"],["Sleep","Workout","Meditation","Diet","NoPMO"],["Scrolling","Journaling","Stillness"]]},
   {title:"", blocks:[["Errands"]]}
 ];
 const productivityGroups = [
@@ -3688,7 +3688,7 @@ const productivityGroups = [
 const domainGroups = [
   {blocks:[["Writing","Projects"]]},
   {blocks:[["Money","Fitness","Game"]]},
-  {blocks:[["Speaking","Upskilling"]]}
+  {blocks:[["Speaking","Upskilling","Reading"]]}
 ];
 const layerItems = {
   1: [...personalGroups[0].blocks.flat(),"Errands"],
@@ -3712,8 +3712,8 @@ function simpleTrackerQuestion(name){
     "NoPMO":"Did you follow NoPMO today?",
     "Scrolling":"Did you stay off mindless scrolling today?",
     "Journaling":"Did you journal today?",
+    "Stillness":"Did you practice Stillness today?",
     "Reading":"Did you read today?",
-    "Calisthenics":"Did you do calisthenics today?",
     "Grooming - Hair, spa":"Did you do grooming today?",
     "Laundry":"Did you do laundry today?",
     "Wardrobe":"Did you handle wardrobe today?",
@@ -3734,13 +3734,12 @@ function blankEntryHub(){
     Morning:{value:""},
     Night:{value:""},
     Sleep:{durationBand:"",quality:"",wakeTime:""},
-    Workout:{gym:"",cardio:""},
+    Workout:{gym:"",cardio:"",calisthenics:""},
     Meditation:{morning:"",night:""},
     Diet:{value:""},
     Scrolling:{value:""},
     Journaling:{value:""},
-    Reading:{value:"",duration:null},
-    Calisthenics:{value:""},
+    Stillness:{value:""},
     NoPMO:{value:"",tier:""}
   };
 }
@@ -4115,7 +4114,7 @@ function ensureOSNotes(){
   if(notes) return notes;
   notes=document.createElement("div");
   notes.id="osNotes";
-  notes.innerHTML=`<div class="notes-head"><div class="notes-title">Notes</div></div>
+  notes.innerHTML=`<div class="notes-head"></div>
     <div class="notes-card">
       <textarea id="osNotesText" placeholder="Write a note…"></textarea>
     </div>
@@ -4193,6 +4192,7 @@ function sidebarIcon(name){
     Diet:'<path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/>',
     Scrolling:'<path d="M8 6 4 12l4 6M16 6l4 6-4 6"/>',
     Journaling:'<path d="M6 4h11a1 1 0 0 1 1 1v16H7a1 1 0 0 1-1-1V4z"/><path d="M9 4v16"/>',
+    Stillness:'<path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"/><path d="M12 8v4l2 2"/>',
     Reading:'<path d="M12 6c-2-1.4-5-1.6-8-.8v13c3-.8 6-.6 8 .8 2-1.4 5-1.6 8-.8V5.2c-3-.8-6-.6-8 .8z"/>',
     Calisthenics:'<path d="M9 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM15 11c-2 0-3 2-3 4v6M8 11h5l2 3"/>',
     NoPMO:'<path d="M12 3 5 6v6c0 5 3.2 8.2 7 9 3.8-.8 7-4 7-9V6z"/>',
@@ -4910,7 +4910,7 @@ async function renderWorkspace(){
   hidePersonalNav();
   if(workspaceMode==="overview" || (workspaceMode!=="entry" && workspaceMode!=="outcomes" && currentItem===0 && workspaceMode!=="system")){
     document.getElementById("overviewPage").style.display="block";
-    document.getElementById("workspaceTitle").textContent=overviewConfig(currentLayer).title;
+    document.getElementById("workspaceTitle").textContent="";
     document.getElementById("workspaceSub").textContent="";
     await renderEngineOverview();
     return;
@@ -5269,9 +5269,8 @@ function hubChoice(label, active, extraClass, onclick, disabled=false){
 function isHubSystemComplete(name, entry){
   if(!entry) return false;
   if(name==="Sleep") return !!(entry.quality && (entry.durationBand||entry.hours));
-  if(name==="Workout") return !!(coerceHubValue(entry.gym) && coerceHubValue(entry.cardio));
+  if(name==="Workout") return !!(coerceHubValue(entry.gym) && coerceHubValue(entry.cardio) && coerceHubValue(entry.calisthenics));
   if(name==="Meditation") return !!(coerceHubValue(entry.morning) && coerceHubValue(entry.night));
-  if(name==="Reading") return !!coerceHubValue(entry.value);
   if(name==="NoPMO"){
     const value=coerceHubValue(entry.value);
     return !!(value && (value!=="no" || entry.tier));
@@ -5362,7 +5361,7 @@ function renderEntryHub(){
           </div>
         </div>
       </div>
-      <div class="hub-row">${hubLabel("Workout")}<div class="hub-controls"><span class="hub-label">Gym</span>${yn("Workout","gym",true)}<span class="hub-label">Cardio</span>${yn("Workout","cardio",true)}</div></div>
+      <div class="hub-row">${hubLabel("Workout")}<div class="hub-controls"><span class="hub-label">Gym</span>${yn("Workout","gym",true)}<span class="hub-label">Cardio</span>${yn("Workout","cardio",true)}<span class="hub-label">Calisthenics</span>${yn("Workout","calisthenics",true)}</div></div>
       <div class="hub-row">${hubLabel("Meditation")}<div class="hub-controls"><span class="hub-label">Morning</span>${yn("Meditation","morning",false)}<span class="hub-label">Night</span>${yn("Meditation","night",false)}</div></div>
       <div class="hub-row">${hubLabel("Diet")}<div class="hub-controls">${yn("Diet","",true)}</div></div>
       <div class="hub-row">${hubLabel("NoPMO")}<div class="hub-controls">${yn("NoPMO","",false)}<span class="hub-extra">${hubChoice("Beta",entryHub.NoPMO.tier==="beta","tiny nopmo-beta",`setHubNoPMOTier('beta')`,entryHub.NoPMO.value!=="no")}${hubChoice("Alpha",entryHub.NoPMO.tier==="alpha","tiny nopmo-alpha",`setHubNoPMOTier('alpha')`,entryHub.NoPMO.value!=="no")}</span></div></div>
@@ -5371,8 +5370,7 @@ function renderEntryHub(){
     <div class="hub-block">
       <div class="hub-row">${hubLabel("Scrolling")}<div class="hub-controls">${yn("Scrolling","",true)}</div></div>
       <div class="hub-row">${hubLabel("Journaling")}<div class="hub-controls">${yn("Journaling","",true)}</div></div>
-      <div class="hub-row">${hubLabel("Reading")}<div class="hub-controls">${yn("Reading","",true)}</div></div>
-      <div class="hub-row">${hubLabel("Calisthenics")}<div class="hub-controls">${yn("Calisthenics","",true)}</div></div>
+      <div class="hub-row">${hubLabel("Stillness")}<div class="hub-controls">${yn("Stillness","",true)}</div></div>
     </div>`;
 }
 function setEntrySavedState(saved){
@@ -5381,7 +5379,7 @@ function setEntrySavedState(saved){
 }
 function setHubValue(sys,value){
   entryHub[sys].value=value;
-  if(sys==="Reading" && value!=="yes") entryHub.Reading.duration=null;
+  
   if(sys==="NoPMO" && value!=="no") entryHub.NoPMO.tier="";
   setEntrySavedState(false);
   renderEntryHub();
@@ -5407,7 +5405,7 @@ async function loadEntryHub(){
     return;
   }
   entryHub=blankEntryHub();
-  const [morning,night,sleep,workout,meditation,diet,scrolling,journaling,reading,calisthenics,nofap]=await Promise.all([
+  const [morning,night,sleep,workout,meditation,diet,scrolling,journaling,stillness,nofap]=await Promise.all([
     getEntries("Morning",selectedDate,selectedDate),
     getEntries("Night",selectedDate,selectedDate),
     getEntries("Sleep",selectedDate,selectedDate),
@@ -5416,8 +5414,7 @@ async function loadEntryHub(){
     getEntries("Diet",selectedDate,selectedDate),
     getEntries("Scrolling",selectedDate,selectedDate),
     getEntries("Journaling",selectedDate,selectedDate),
-    getEntries("Reading",selectedDate,selectedDate),
-    getEntries("Calisthenics",selectedDate,selectedDate),
+    getEntries("Stillness",selectedDate,selectedDate),
     getEntries("NoPMO",selectedDate,selectedDate)
   ]);
   if(morning[selectedDate]?.value!=null && morning[selectedDate].value!=="") entryHub.Morning.value=coerceHubValue(morning[selectedDate].value);
@@ -5430,6 +5427,7 @@ async function loadEntryHub(){
   if(workout[selectedDate]){
     entryHub.Workout.gym=coerceHubValue(workout[selectedDate].gym);
     entryHub.Workout.cardio=coerceHubValue(workout[selectedDate].cardio);
+    entryHub.Workout.calisthenics=coerceHubValue(workout[selectedDate].calisthenics);
   }
   if(meditation[selectedDate]){
     entryHub.Meditation.morning=coerceHubValue(meditation[selectedDate].morning);
@@ -5438,11 +5436,7 @@ async function loadEntryHub(){
   if(diet[selectedDate]?.value!=null && diet[selectedDate].value!=="") entryHub.Diet.value=coerceHubValue(diet[selectedDate].value);
   if(scrolling[selectedDate]?.value!=null && scrolling[selectedDate].value!=="") entryHub.Scrolling.value=coerceHubValue(scrolling[selectedDate].value);
   if(journaling[selectedDate]?.value!=null && journaling[selectedDate].value!=="") entryHub.Journaling.value=coerceHubValue(journaling[selectedDate].value);
-  if(reading[selectedDate]){
-    entryHub.Reading.value=coerceHubValue(reading[selectedDate].value);
-    entryHub.Reading.duration=reading[selectedDate].duration||null;
-  }
-  if(calisthenics[selectedDate]?.value!=null && calisthenics[selectedDate].value!=="") entryHub.Calisthenics.value=coerceHubValue(calisthenics[selectedDate].value);
+  if(stillness[selectedDate]?.value!=null && stillness[selectedDate].value!=="") entryHub.Stillness.value=coerceHubValue(stillness[selectedDate].value);
   if(nofap[selectedDate]){
     entryHub.NoPMO.value=coerceHubValue(nofap[selectedDate].value);
     entryHub.NoPMO.tier=nofap[selectedDate].tier||"";
@@ -5500,13 +5494,14 @@ async function saveEntryHub(){
     const band=sleepDurationBands[entryHub.Sleep.durationBand];
     writes.push(saveSystemEntry("Sleep",selectedDate,{hours:band.hours,durationBand:entryHub.Sleep.durationBand,quality:parseInt(entryHub.Sleep.quality),wakeTime:entryHub.Sleep.wakeTime||""}));
   }
-  if(entryHub.Workout.gym && entryHub.Workout.cardio){
+  if(entryHub.Workout.gym && entryHub.Workout.cardio && entryHub.Workout.calisthenics){
     const existing=(await getEntries("Workout",selectedDate,selectedDate))[selectedDate]||{};
     writes.push(saveSystemEntry("Workout",selectedDate,{
       gym:entryHub.Workout.gym,
       gymTime:entryHub.Workout.gym==="yes"?existing.gymTime||"":"",
       cardio:entryHub.Workout.cardio,
-      cardioTime:entryHub.Workout.cardio==="yes"?existing.cardioTime||null:null
+      cardioTime:entryHub.Workout.cardio==="yes"?existing.cardioTime||null:null,
+      calisthenics:entryHub.Workout.calisthenics
     }));
   }
   if(entryHub.Meditation.morning && entryHub.Meditation.night){
@@ -5518,12 +5513,9 @@ async function saveEntryHub(){
       nightTime:entryHub.Meditation.night==="yes"?existing.nightTime||null:null
     }));
   }
-  ["Diet","Scrolling","Journaling","Calisthenics"].forEach(name=>{
+  ["Diet","Scrolling","Journaling","Stillness"].forEach(name=>{
     if(entryHub[name].value) writes.push(saveSystemEntry(name,selectedDate,{value:entryHub[name].value}));
   });
-  if(entryHub.Reading.value){
-    writes.push(saveSystemEntry("Reading",selectedDate,{value:entryHub.Reading.value}));
-  }
   if(entryHub.NoPMO.value){
     if(entryHub.NoPMO.value==="no" && !entryHub.NoPMO.tier){alert("Please select Beta or Alpha for NoPMO.");return;}
     writes.push(saveSystemEntry("NoPMO",selectedDate,{value:entryHub.NoPMO.value,tier:entryHub.NoPMO.value==="no"?entryHub.NoPMO.tier:""}));
@@ -5957,9 +5949,11 @@ async function renderEngineDashboard(systemName){
   if(systemName==="Workout"){
     const gymYes=logged.filter(d=>data[d].gym==="yes");
     const cardioYes=logged.filter(d=>data[d].cardio==="yes");
+    const calisYes=logged.filter(d=>data[d].calisthenics==="yes");
     renderEngineMetrics([
       {label:`GYM DAYS · ${dayCount} DAYS`, value:String(gymYes.length), small:`of ${logged.length} logged`},
       {label:`CARDIO DAYS · ${dayCount} DAYS`, value:String(cardioYes.length), small:`of ${logged.length} logged`},
+      {label:`CALISTHENICS DAYS · ${dayCount} DAYS`, value:String(calisYes.length), small:`of ${logged.length} logged`},
       {label:"DAYS LOGGED", value:String(logged.length), small:`of ${dayCount}`},
       {label:"LOGGING CONSISTENCY", value:consistency, small:rangeLabel.toLowerCase()}
     ]);
@@ -5971,6 +5965,7 @@ async function renderEngineDashboard(systemName){
     };
     charts.appendChild(renderChartCard("Gym", renderBarChart("gymChart", dates, date=>ynBar(data[date]?.gym))));
     charts.appendChild(renderChartCard("Cardio", renderBarChart("cardioChart", dates, date=>ynBar(data[date]?.cardio))));
+    charts.appendChild(renderChartCard("Calisthenics", renderBarChart("calisthenicsChart", dates, date=>ynBar(data[date]?.calisthenics))));
     return;
   }
 
