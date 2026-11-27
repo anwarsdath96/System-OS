@@ -1125,6 +1125,18 @@ input:focus,select:focus{border-color:#687382}
   display:none !important;
 }
 
+
+.bar-label.today-bar{
+  border-color:#36e38b;
+  box-shadow:inset 0 -2px 0 #36e38b;
+  color:#b9ffd8;
+}
+.date.future-locked{
+  opacity:.45;
+  cursor:not-allowed;
+  pointer-events:none;
+}
+
 /* Auto-save status circle — ring style */
 .save-status-wrap{
   display:flex;
@@ -3023,7 +3035,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
           <div class="workspace-head-right">
             <div class="current-date" id="currentDateLabel"></div>
             <div class="range-toggle" id="outcomeRangeToggle">
-              <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">Last 7 days</button>
+              <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">This week</button>
               <button class="range-btn dash-range-30" onclick="setDashRange(30)">Last 30 days</button>
             </div>
           </div>
@@ -3202,7 +3214,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
             <div class="metric">
               <div class="metric-label">LOGGING CONSISTENCY</div>
               <div class="metric-value" id="consistency">0%</div>
-              <div class="metric-small" id="consistencySmall">last 7 days</div>
+              <div class="metric-small" id="consistencySmall">this week</div>
             </div>
           </div>
 
@@ -3210,7 +3222,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
             <div class="chart-card-head">
               <div class="chart-title">Wake Up Time</div>
               <div class="range-toggle">
-                <button class="range-btn sleep-range-7 active" onclick="setSleepDashRange(7)">Last 7 days</button>
+                <button class="range-btn sleep-range-7 active" onclick="setSleepDashRange(7)">This week</button>
                 <button class="range-btn sleep-range-30" onclick="setSleepDashRange(30)">Last 30 days</button>
               </div>
             </div>
@@ -3249,7 +3261,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
             <div class="metric">
               <div class="metric-label">LOGGING CONSISTENCY</div>
               <div class="metric-value" id="analyticsConsistency">0%</div>
-              <div class="metric-small" id="analyticsConsistencySmall">last 7 days</div>
+              <div class="metric-small" id="analyticsConsistencySmall">this week</div>
             </div>
           </div>
 
@@ -3257,7 +3269,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
             <div class="chart-card-head">
               <div class="chart-title">Sleep Duration Trend</div>
               <div class="range-toggle">
-                <button class="range-btn sleep-range-7 active" onclick="setSleepDashRange(7)">Last 7 days</button>
+                <button class="range-btn sleep-range-7 active" onclick="setSleepDashRange(7)">This week</button>
                 <button class="range-btn sleep-range-30" onclick="setSleepDashRange(30)">Last 30 days</button>
               </div>
             </div>
@@ -3273,7 +3285,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
         <section id="engineDashboardPage" style="display:none">
           <div class="dash-toolbar">
             <div class="range-toggle">
-              <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">Last 7 days</button>
+              <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">This week</button>
               <button class="range-btn dash-range-30" onclick="setDashRange(30)">Last 30 days</button>
             </div>
           </div>
@@ -4707,7 +4719,7 @@ function overviewSystemBlocks(layer){
 }
 async function loadLayerHealthScores(layer, days=overviewRangeDays){
   const systems=overviewSystemBlocks(layer).flat();
-  const dates=getDateRange(days);
+  const dates=dashDates(days);
   return Promise.all(systems.map(async name=>{
     const data=await getEntries(name,dates[0],dates[dates.length-1]);
     let total=0, counted=0, logged=0;
@@ -4748,7 +4760,7 @@ function healthCardMarkup(barsId, labelsId, withViews=false){
           ${views}
         </div>
         <div class="range-toggle">
-          <button class="range-btn${overviewRangeDays===7?" active":""}" onclick="setOverviewRange(7)">Last 7 days</button>
+          <button class="range-btn${overviewRangeDays===7?" active":""}" onclick="setOverviewRange(7)">This week</button>
           <button class="range-btn${overviewRangeDays===30?" active":""}" onclick="setOverviewRange(30)">Last 30 days</button>
         </div>
       </div>
@@ -4813,7 +4825,7 @@ function lineSegments(values){
   return segs.map(seg=>`M ${seg.join(" L ")}`).join(" ");
 }
 async function renderOutcomeLineChart(){
-  const dates=getDateRange(overviewRangeDays);
+  const dates=dashDates(overviewRangeDays);
   const data=await getEntries(currentOutcomeSystem(),dates[0],dates[dates.length-1]);
   const groups=currentOutcomeGroups();
   const good=groups[0].items, bad=groups[1].items, focus=(groups[2]&&groups[2].items)||[];
@@ -4884,7 +4896,7 @@ function paintHealthChart(barsId, labelsId, scores, blocks){
   }).join("");
 }
 async function loadOutcomeHealthScores(days=overviewRangeDays){
-  const dates=getDateRange(days);
+  const dates=dashDates(days);
   const data=await getEntries(currentOutcomeSystem(),dates[0],dates[dates.length-1]);
   const tone={};
   currentOutcomeGroups().forEach(group=>group.items.forEach(name=>tone[name]=group.tone));
@@ -5736,6 +5748,7 @@ function currentDateStripId(){
   return "simpleDateStrip";
 }
 async function onPickEntryDate(dateString, targetId){
+  if(dateString>getDateString(new Date())) return;
   selectedDate=dateString;
   await renderDateStrip(targetId);
   document.getElementById("currentDateLabel").innerHTML=formatDate(selectedDate);
@@ -5833,7 +5846,9 @@ async function renderDateStrip(targetId="dateStrip"){
     button.className="date"+dateToneClass(date,today)+(dateString===selectedDate?" selected":"")+(outside?" outside":"");
     const weekday=date.toLocaleDateString(undefined,{weekday:"long"});
     button.innerHTML=`<span class="date-check${logged[dateString]?" on":""}"></span><div class="day">${weekday}</div><div class="number">${date.getDate()}</div>${getDateString(date)===getDateString(today)?'<div class="today-label">Today</div>':''}`;
-    if(!outside) button.onclick=()=>onPickEntryDate(dateString,targetId);
+    const isFuture=dateString>getDateString(today);
+    if(isFuture) button.classList.add("future-locked");
+    if(!outside && !isFuture) button.onclick=()=>onPickEntryDate(dateString,targetId);
     grid.appendChild(button);
   });
 
@@ -5866,18 +5881,18 @@ async function setDashRange(days){
 }
 async function renderDashboard(){
   const days=dashRangeDays;
-  const dates=getDateRange(days);
+  const dates=dashDates(days);
   const data=await getEntries("Sleep",dates[0],dates[dates.length-1]);
   const entries=dates.map(date=>data[date]).filter(Boolean);
   const rangeText=days+" DAYS";
   document.getElementById("avgHoursLabel").textContent="AVG SLEEP · "+rangeText;
   document.getElementById("avgQualityLabel").textContent="AVG QUALITY · "+rangeText;
   document.getElementById("daysLoggedSmall").textContent="of "+days;
-  document.getElementById("consistencySmall").textContent=days===30?"last 30 days":"last 7 days";
+  document.getElementById("consistencySmall").textContent=days===30?"last 30 days":"this week";
   document.getElementById("analyticsAvgHoursLabel").textContent="AVG SLEEP · "+rangeText;
   document.getElementById("analyticsAvgQualityLabel").textContent="AVG QUALITY · "+rangeText;
   document.getElementById("analyticsDaysLoggedSmall").textContent="of "+days;
-  document.getElementById("analyticsConsistencySmall").textContent=days===30?"last 30 days":"last 7 days";
+  document.getElementById("analyticsConsistencySmall").textContent=days===30?"last 30 days":"this week";
   if(entries.length){
     const avgHours=entries.reduce((s,e)=>s+Number(e.hours),0)/entries.length;
     const avgQuality=entries.reduce((s,e)=>s+Number(e.quality),0)/entries.length;
@@ -5935,7 +5950,7 @@ function renderChart(id,data,dates,type){
       container.appendChild(empty);
     }
     const label=document.createElement("div");
-    label.className="bar-label";
+    label.className="bar-label"+(date===getDateString(new Date())?" today-bar":"");
     const dt=new Date(date+"T00:00:00");
     label.textContent=dates.length>10?String(dt.getDate()):dt.toLocaleDateString(undefined,{weekday:"short"});
     container.appendChild(label);
@@ -5951,6 +5966,19 @@ function getDateRange(days){
     dates.push(getDateString(date));
   }
   return dates;
+}
+function getCurrentWeekDates(){
+  const monday=startOfWeekMonday(new Date());
+  const dates=[];
+  for(let i=0;i<7;i++){
+    const date=new Date(monday);
+    date.setDate(monday.getDate()+i);
+    dates.push(getDateString(date));
+  }
+  return dates;
+}
+function dashDates(dayCount){
+  return dayCount===7?getCurrentWeekDates():getDateRange(dayCount);
 }
 function shortWeekday(dateString){
   return new Date(dateString+"T00:00:00").toLocaleDateString(undefined,{weekday:"short"});
@@ -5994,7 +6022,7 @@ function renderBarChart(containerId, dates, getBar){
     bar.style.height=spec.height||"3px";
     wrap.appendChild(bar);
     const label=document.createElement("div");
-    label.className="bar-label";
+    label.className="bar-label"+(date===getDateString(new Date())?" today-bar":"");
     const dt=new Date(date+"T00:00:00");
     label.textContent=dates.length>10?String(dt.getDate()):shortWeekday(date);
     wrap.appendChild(label);
@@ -6024,7 +6052,7 @@ async function renderOutcomeDashboard(){
   const systemPage=document.getElementById("systemPage");
   if(systemPage) systemPage.classList.add("outcome-fit");
   const dayCount=dashRangeDays;
-  const dates=getDateRange(dayCount);
+  const dates=dashDates(dayCount);
   const rows=await getEntries(currentOutcomeSystem(),dates[0],dates[dates.length-1]);
   const groups=currentOutcomeGroups();
   const allNames=groups.flatMap(group=>group.items);
@@ -6056,7 +6084,7 @@ async function renderOutcomeDashboard(){
   const high=groups[0]?groupAvg(groups[0]):null;
   const low=groups[1]?groupAvg(groups[1]):null;
   const consistency=Math.round(logged.length/dates.length*100)+"%";
-  const rangeLabel=dayCount===30?"Last 30 days":"Last 7 days";
+  const rangeLabel=dayCount===30?"Last 30 days":"This week";
   renderEngineMetrics([
     {label:`AVG SCORE · ${dayCount} DAYS`, value:avg==null?"—":avg.toFixed(1), small:"out of 5"},
     {label:`${(groups[0]?outcomeGroupTitle(groups[0]):"HIGH").toUpperCase()} · ${dayCount} DAYS`, value:high==null?"—":high.toFixed(1), small:"out of 5"},
@@ -6118,11 +6146,11 @@ async function renderEngineDashboard(systemName){
   const systemPage=document.getElementById("systemPage");
   if(systemPage) systemPage.classList.remove("outcome-fit");
   const dayCount=dashRangeDays;
-  const dates=getDateRange(dayCount);
+  const dates=dashDates(dayCount);
   const data=await getEntries(systemName,dates[0],dates[dates.length-1]);
   const logged=dates.filter(d=>!!data[d]);
   const consistency=Math.round(logged.length/dates.length*100)+"%";
-  const rangeLabel=dayCount===30?"Last 30 days":"Last 7 days";
+  const rangeLabel=dayCount===30?"Last 30 days":"This week";
   const charts=document.getElementById("engineDashCharts");
   charts.innerHTML="";
   updateDashRangeButtons();
