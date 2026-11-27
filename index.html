@@ -3750,7 +3750,7 @@ const supabaseClient = (SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.inc
 const qualityNames = {1:"Worst",2:"Bad",3:"Okay",4:"Good",5:"Best"};
 const qualityPills = {1:"pill-worst",2:"pill-bad",3:"pill-okay",4:"pill-good",5:"pill-best"};
 const personalGroups = [
-  {title:"Systems", blocks:[["Morning","Night"],["Sleep","Workout","Meditation","Diet","NoPMO"],["Scrolling","Journaling","Stillness"]]},
+  {title:"Systems", blocks:[["Morning","Night"],["NoPMO","Sleep","Workout","Meditation","Diet"],["Scrolling","Journaling","Stillness"]]},
   {title:"", blocks:[["Errands"]]}
 ];
 const productivityGroups = [
@@ -3760,9 +3760,9 @@ const productivityGroups = [
   {blocks:[["Year"]]}
 ];
 const domainGroups = [
-  {blocks:[["Writing","Projects"]]},
-  {blocks:[["Money","Fitness","Game"]]},
-  {blocks:[["Speaking","Upskilling","Reading"]]}
+  {blocks:[["Fitness","Game"]]},
+  {blocks:[["Money","Projects","Upskilling"]]},
+  {blocks:[["Speaking","Reading"]]}
 ];
 const layerItems = {
   1: [...personalGroups[0].blocks.flat(),"Errands"],
@@ -5501,6 +5501,7 @@ function renderEntryHub(){
     </div>
     <div class="divider"></div>
     <div class="hub-block">
+      <div class="hub-row">${hubLabel("NoPMO")}<div class="hub-controls">${yn("NoPMO","",false)}<span class="hub-extra">${hubChoice("Beta",entryHub.NoPMO.tier==="beta","tiny nopmo-beta",`setHubNoPMOTier('beta')`,entryHub.NoPMO.value!=="no")}${hubChoice("Alpha",entryHub.NoPMO.tier==="alpha","tiny nopmo-alpha",`setHubNoPMOTier('alpha')`,entryHub.NoPMO.value!=="no")}</span></div></div>
       <div class="hub-row">
         ${hubLabel("Sleep")}
         <div class="hub-controls hub-sleep-controls">
@@ -5521,7 +5522,6 @@ function renderEntryHub(){
       <div class="hub-row">${hubLabel("Workout")}<div class="hub-controls"><span class="hub-label">Gym</span>${yn("Workout","gym",true)}<span class="hub-label">Cardio</span>${yn("Workout","cardio",true)}<span class="hub-label">Calisthenics</span>${yn("Workout","calisthenics",true)}</div></div>
       <div class="hub-row">${hubLabel("Meditation")}<div class="hub-controls"><span class="hub-label">Morning</span>${yn("Meditation","morning",false)}<span class="hub-label">Night</span>${yn("Meditation","night",false)}</div></div>
       <div class="hub-row">${hubLabel("Diet")}<div class="hub-controls">${yn("Diet","",true)}</div></div>
-      <div class="hub-row">${hubLabel("NoPMO")}<div class="hub-controls">${yn("NoPMO","",false)}<span class="hub-extra">${hubChoice("Beta",entryHub.NoPMO.tier==="beta","tiny nopmo-beta",`setHubNoPMOTier('beta')`,entryHub.NoPMO.value!=="no")}${hubChoice("Alpha",entryHub.NoPMO.tier==="alpha","tiny nopmo-alpha",`setHubNoPMOTier('alpha')`,entryHub.NoPMO.value!=="no")}</span></div></div>
     </div>
     <div class="divider"></div>
     <div class="hub-block">
