@@ -814,12 +814,15 @@ input:focus,select:focus{border-color:#687382}
 }
 .sidebar-email{
   color:#aeb4bd;
-  font-size:11px;
-  line-height:1.35;
-  margin-bottom:9px;
+  font-size:11.5px;
+  line-height:1.2;
+  margin-bottom:0;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  flex:1;
+  min-width:0;
+  max-width:calc(100% - 28px);
 }
 .sidebar-logout{
   width:100%;
@@ -1115,6 +1118,72 @@ input:focus,select:focus{border-color:#687382}
   }
 }
 
+
+
+/* Auto-save active — hide manual Save buttons */
+.save-btn, .save-row, .notes-save, .game-actions .save-btn, .domain-def-save{
+  display:none !important;
+}
+
+/* Auto-save status circle — ring style */
+.save-status-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  margin-bottom:8px;
+  min-height:22px;
+  width:100%;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.save-status-circle{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  flex:0 0 18px;
+  position:relative;
+  background:transparent;
+  border:2.5px solid #4fd18a;
+  box-sizing:border-box;
+  transition:border-color .25s ease;
+}
+.save-status-circle.saved{
+  border-color:#4fd18a;
+}
+.save-status-circle.dirty{
+  border-color:#ef6973;
+}
+.save-status-circle.saving{
+  border-color:rgba(240,138,26,.25);
+}
+.save-status-circle.error{
+  border-color:#f08a1a;
+}
+.save-status-circle .progress{
+  position:absolute;
+  inset:-2.5px;
+  border-radius:50%;
+  border:2.5px solid transparent;
+  border-top-color:#f08a1a;
+  border-right-color:#f08a1a;
+  opacity:0;
+  transform:rotate(-90deg);
+  transition:opacity .2s;
+}
+.save-status-circle.saving .progress{
+  opacity:1;
+  animation:save-spin 1s linear infinite;
+}
+@keyframes save-spin{
+  to{transform:rotate(270deg);}
+}
+.save-status-label{
+  font-size:10px;
+  color:#858c96;
+  white-space:nowrap;
+}
+
 /* =========================================================
    PERSONAL OS — MODERN DARK VISUAL SYSTEM
    Visual-only redesign: no HTML structure or JS behavior changed.
@@ -1257,7 +1326,7 @@ button:active{transform:translateY(1px)}
 .sidebar-group{color:#627386;font-size:9px;font-weight:750;letter-spacing:.15em;text-transform:uppercase;padding:10px 8px 5px}
 
 .sidebar-account{margin-top:auto;padding:12px 8px 4px;border-top:1px solid var(--line)}
-.sidebar-email{color:#9caaba;font-size:10px;line-height:1.35;margin-bottom:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-email{color:#9caaba;font-size:11.5px;line-height:1.2;margin-bottom:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;max-width:calc(100% - 28px)}
 .sidebar-logout{width:100%;font-size:11px;padding:8px 10px}
 .logout-btn{border:1px solid var(--line);background:#0d141c;color:#91a0b0;padding:8px 11px;border-radius:8px;cursor:pointer;font-size:11px}
 .logout-btn:hover{border-color:var(--line-strong);color:#fff;background:#121c26}
@@ -2922,7 +2991,12 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
       <div class="sidebar-title" id="sidebarTitle" style="display:none"></div>
       <div id="sidebarItems"></div>
       <div class="sidebar-account">
-        <div class="sidebar-email" id="userEmail"></div>
+        <div class="save-status-wrap">
+          <div class="sidebar-email" id="userEmail"></div>
+          <div class="save-status-circle saved" id="saveStatusCircle" title="Saved">
+            <div class="progress"></div>
+          </div>
+        </div>
         <button class="logout-btn sidebar-logout" onclick="logout()">Log out</button>
       </div>
     </aside>
@@ -3969,6 +4043,7 @@ async function onSignedIn(user){
 
 async function initializeApp(){
   renderSidebar();
+  setSaveStatus("saved");
   if(!isConfigured()){
     showAuth();
     setAuthMessage("Setup required: add your Supabase project URL and publishable key to index.html.","error");
@@ -4137,6 +4212,88 @@ function flashSaved(btn){
   clearTimeout(btn._savedTimer);
   btn._savedTimer=setTimeout(()=>{btn.classList.remove("saved");btn.textContent="Save";},900);
 }
+
+/* ==============================
+   AUTO-SAVE + STATUS CIRCLE
+   ============================== */
+let autoSaveTimer = null;
+let saveStatus = "saved"; // saved | dirty | saving | error
+function setSaveStatus(state){
+  saveStatus = state;
+  const el = document.getElementById("saveStatusCircle");
+  if(!el) return;
+  el.classList.remove("saved","dirty","saving","error");
+  el.classList.add(state);
+  const titles = {saved:"Saved", dirty:"Unsaved changes", saving:"Saving…", error:"Save failed"};
+  el.title = titles[state] || "";
+}
+function markDirty(){
+  if(saveStatus === "saving") return;
+  setSaveStatus("dirty");
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(triggerAutoSave, 3000);
+}
+async function triggerAutoSave(){
+  if(saveStatus !== "dirty") return;
+  setSaveStatus("saving");
+  try{
+    const ok = await performAutoSave();
+    setSaveStatus(ok ? "saved" : "error");
+  }catch(e){
+    console.error(e);
+    setSaveStatus("error");
+  }
+}
+async function performAutoSave(){
+  // Entry hub (personal / productivity)
+  if(workspaceMode === "entry" && currentUser){
+    return await saveEntryHub(true);
+  }
+  // OS Notes
+  const notesBox = document.getElementById("osNotesText");
+  if(notesBox && document.getElementById("osNotes")?.classList.contains("is-active")){
+    const ok = await saveSystemEntry("Notes", OS_NOTES_DATE, {text: notesBox.value});
+    return !!ok;
+  }
+  // Domain notes / definition textareas
+  const defBox = document.getElementById("domainDefinitionText");
+  if(defBox && defBox.offsetParent !== null){
+    const name = (layerItems[3]||[])[currentItem-1] || "";
+    if(name){
+      const ok = await saveSystemEntry(name + " Notes", NOTES_DATE || "1970-01-03", {text: defBox.value});
+      return !!ok;
+    }
+  }
+  // System definition
+  const sysDef = document.querySelector("#systemDefinitionPage textarea.definition-note");
+  if(sysDef && sysDef.offsetParent !== null && definitionSystem){
+    const ok = await saveSystemEntry(definitionSystem, DEFINITION_DATE, {text: sysDef.value, bullets: []});
+    return !!ok;
+  }
+  // Fitness notes
+  for(const key of (typeof FITNESS_NOTE_KEYS !== "undefined" ? FITNESS_NOTE_KEYS : [])){
+    const box = document.getElementById(fitnessNoteTextId(key));
+    if(box && box.offsetParent !== null){
+      const ok = await saveSystemEntry(fitnessNoteSystem(key), FITNESS_NOTE_DATE, {text: box.value});
+      return !!ok;
+    }
+  }
+  // Generic: if nothing matched, treat as success (no-op)
+  return true;
+}
+
+// Hook textareas for auto-save
+function bindAutoSaveInputs(){
+  document.querySelectorAll("textarea").forEach(ta=>{
+    if(ta.dataset.autosaveBound) return;
+    ta.dataset.autosaveBound = "1";
+    ta.addEventListener("input", markDirty);
+  });
+}
+document.addEventListener("DOMContentLoaded", bindAutoSaveInputs);
+// Also rebind periodically in case of dynamic content
+setInterval(bindAutoSaveInputs, 2000);
+
 async function saveOSNotes(){
   const box=document.getElementById("osNotesText");
   const btn=document.getElementById("osNotesSave");
@@ -5382,14 +5539,15 @@ function setHubValue(sys,value){
   
   if(sys==="NoPMO" && value!=="no") entryHub.NoPMO.tier="";
   setEntrySavedState(false);
+  markDirty();
   renderEntryHub();
 }
-function setHubField(sys,field,value){entryHub[sys][field]=value;setEntrySavedState(false);renderEntryHub();}
-function setHubReadingDuration(value){entryHub.Reading.duration=value;setEntrySavedState(false);renderEntryHub();}
-function setHubNoPMOTier(tier){entryHub.NoPMO.tier=tier;setEntrySavedState(false);renderEntryHub();}
-function chooseHubSleepQuality(value){entryHub.Sleep.quality=String(value);closeNotionSelects();setEntrySavedState(false);renderEntryHub();}
-function chooseHubSleepBand(band){entryHub.Sleep.durationBand=band;closeNotionSelects();setEntrySavedState(false);renderEntryHub();}
-function chooseHubSleepWake(time){entryHub.Sleep.wakeTime=time;closeNotionSelects();setEntrySavedState(false);renderEntryHub();}
+function setHubField(sys,field,value){entryHub[sys][field]=value;setEntrySavedState(false);markDirty();renderEntryHub();}
+function setHubReadingDuration(value){entryHub.Reading.duration=value;setEntrySavedState(false);markDirty();renderEntryHub();}
+function setHubNoPMOTier(tier){entryHub.NoPMO.tier=tier;setEntrySavedState(false);markDirty();renderEntryHub();}
+function chooseHubSleepQuality(value){entryHub.Sleep.quality=String(value);closeNotionSelects();setEntrySavedState(false);markDirty();renderEntryHub();}
+function chooseHubSleepBand(band){entryHub.Sleep.durationBand=band;closeNotionSelects();setEntrySavedState(false);markDirty();renderEntryHub();}
+function chooseHubSleepWake(time){entryHub.Sleep.wakeTime=time;closeNotionSelects();setEntrySavedState(false);markDirty();renderEntryHub();}
 async function loadEntryHub(){
   if(currentLayer===2){
     entryOutcomes=blankOutcomes();
@@ -5451,6 +5609,7 @@ async function loadEntryHub(){
   renderOutcomeHub();
   setEntrySavedState(false);
   syncSelectedDateTick();
+  setSaveStatus("saved");
 }
 function renderOutcomeHub(){
   const body=document.getElementById("outcomeHubBody");
@@ -5471,9 +5630,10 @@ function renderOutcomeHub(){
 function setOutcomeScore(name, value){
   entryOutcomes[name]=String(entryOutcomes[name])===String(value)?"":String(value);
   setEntrySavedState(false);
+  markDirty();
   renderOutcomeHub();
 }
-async function saveEntryHub(){
+async function saveEntryHub(silent=false){
   const writes=[];
   if(currentLayer===2){
     const outcomeScores={};
@@ -5481,44 +5641,60 @@ async function saveEntryHub(){
     Object.keys(entryOutcomes).forEach(key=>{
       if(entryOutcomes[key]!==""){outcomeScores[key]=Number(entryOutcomes[key]);hasOutcomes=true;}
     });
-    if(!hasOutcomes){alert("Select at least one outcome before saving.");return;}
+    if(!hasOutcomes){
+      if(!silent) alert("Select at least one outcome before saving.");
+      return silent ? true : false;
+    }
     writes.push(saveSystemEntry(currentOutcomeSystem(),selectedDate,{scores:outcomeScores,scope:productivityEntryView}));
-    await Promise.all(writes);
+    const results = await Promise.all(writes);
     await renderDateStrip("entryHubDateStrip");
-    flashSaved(document.getElementById("saveEntryHubBtn"));
-    return;
+    if(!silent) flashSaved(document.getElementById("saveEntryHubBtn"));
+    setEntrySavedState(true);
+    return results.every(Boolean);
   }
+  // Partial saves allowed
   if(entryHub.Morning.value) writes.push(saveSystemEntry("Morning",selectedDate,{value:entryHub.Morning.value}));
   if(entryHub.Night.value) writes.push(saveSystemEntry("Night",selectedDate,{value:entryHub.Night.value}));
-  if(entryHub.Sleep.durationBand && entryHub.Sleep.quality){
+  if(entryHub.Sleep.durationBand || entryHub.Sleep.quality || entryHub.Sleep.wakeTime){
     const band=sleepDurationBands[entryHub.Sleep.durationBand];
-    writes.push(saveSystemEntry("Sleep",selectedDate,{hours:band.hours,durationBand:entryHub.Sleep.durationBand,quality:parseInt(entryHub.Sleep.quality),wakeTime:entryHub.Sleep.wakeTime||""}));
-  }
-  if(entryHub.Workout.gym && entryHub.Workout.cardio && entryHub.Workout.calisthenics){
-    const existing=(await getEntries("Workout",selectedDate,selectedDate))[selectedDate]||{};
-    writes.push(saveSystemEntry("Workout",selectedDate,{
-      gym:entryHub.Workout.gym,
-      gymTime:entryHub.Workout.gym==="yes"?existing.gymTime||"":"",
-      cardio:entryHub.Workout.cardio,
-      cardioTime:entryHub.Workout.cardio==="yes"?existing.cardioTime||null:null,
-      calisthenics:entryHub.Workout.calisthenics
+    writes.push(saveSystemEntry("Sleep",selectedDate,{
+      hours: band ? band.hours : null,
+      durationBand: entryHub.Sleep.durationBand || "",
+      quality: entryHub.Sleep.quality ? parseInt(entryHub.Sleep.quality) : null,
+      wakeTime: entryHub.Sleep.wakeTime || ""
     }));
   }
-  if(entryHub.Meditation.morning && entryHub.Meditation.night){
+  if(entryHub.Workout.gym || entryHub.Workout.cardio || entryHub.Workout.calisthenics){
+    const existing=(await getEntries("Workout",selectedDate,selectedDate))[selectedDate]||{};
+    writes.push(saveSystemEntry("Workout",selectedDate,{
+      gym: entryHub.Workout.gym || "",
+      gymTime: entryHub.Workout.gym==="yes" ? (existing.gymTime||"") : "",
+      cardio: entryHub.Workout.cardio || "",
+      cardioTime: entryHub.Workout.cardio==="yes" ? (existing.cardioTime||null) : null,
+      calisthenics: entryHub.Workout.calisthenics || ""
+    }));
+  }
+  if(entryHub.Meditation.morning || entryHub.Meditation.night){
     const existing=(await getEntries("Meditation",selectedDate,selectedDate))[selectedDate]||{};
     writes.push(saveSystemEntry("Meditation",selectedDate,{
-      morning:entryHub.Meditation.morning,
-      morningTime:entryHub.Meditation.morning==="yes"?existing.morningTime||null:null,
-      night:entryHub.Meditation.night,
-      nightTime:entryHub.Meditation.night==="yes"?existing.nightTime||null:null
+      morning: entryHub.Meditation.morning || "",
+      morningTime: entryHub.Meditation.morning==="yes" ? (existing.morningTime||null) : null,
+      night: entryHub.Meditation.night || "",
+      nightTime: entryHub.Meditation.night==="yes" ? (existing.nightTime||null) : null
     }));
   }
   ["Diet","Scrolling","Journaling","Stillness"].forEach(name=>{
     if(entryHub[name].value) writes.push(saveSystemEntry(name,selectedDate,{value:entryHub[name].value}));
   });
   if(entryHub.NoPMO.value){
-    if(entryHub.NoPMO.value==="no" && !entryHub.NoPMO.tier){alert("Please select Beta or Alpha for NoPMO.");return;}
-    writes.push(saveSystemEntry("NoPMO",selectedDate,{value:entryHub.NoPMO.value,tier:entryHub.NoPMO.value==="no"?entryHub.NoPMO.tier:""}));
+    if(entryHub.NoPMO.value==="no" && !entryHub.NoPMO.tier && !silent){
+      alert("Please select Beta or Alpha for NoPMO.");
+      return false;
+    }
+    writes.push(saveSystemEntry("NoPMO",selectedDate,{
+      value: entryHub.NoPMO.value,
+      tier: entryHub.NoPMO.value==="no" ? (entryHub.NoPMO.tier||"") : ""
+    }));
   }
   const outcomeScores={};
   let hasOutcomes=false;
@@ -5526,10 +5702,15 @@ async function saveEntryHub(){
     if(entryOutcomes[key]!==""){outcomeScores[key]=Number(entryOutcomes[key]);hasOutcomes=true;}
   });
   if(hasOutcomes) writes.push(saveSystemEntry("Outcomes",selectedDate,{scores:outcomeScores}));
-  if(!writes.length){alert("Select at least one system or outcome before saving.");return;}
-  await Promise.all(writes);
+  if(!writes.length){
+    if(!silent) alert("Select at least one system or outcome before saving.");
+    return silent ? true : false;
+  }
+  const results = await Promise.all(writes);
   await renderDateStrip("entryHubDateStrip");
   setEntrySavedState(true);
+  if(!silent) flashSaved(document.getElementById("saveEntryHubBtn"));
+  return results.every(Boolean);
 }
 function startOfWeekMonday(date){
   const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
