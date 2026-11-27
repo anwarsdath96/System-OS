@@ -1137,6 +1137,20 @@ input:focus,select:focus{border-color:#687382}
   pointer-events:none;
 }
 
+
+.personal-section-nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  width:100%;
+}
+.personal-section-left{display:flex;gap:8px;align-items:center}
+.personal-range-toggle{margin-left:auto}
+#engineDashMetrics{
+  grid-template-columns:repeat(auto-fit,minmax(0,1fr));
+}
+#engineDashMetrics .metric{min-width:0}
+
 /* Auto-save status circle — ring style */
 .save-status-wrap{
   display:flex;
@@ -3040,9 +3054,15 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
             </div>
           </div>
         </div>
-        <div id="personalSectionNav" class="domain-sections" style="display:none">
-          <button class="domain-section-btn" data-personal-section="dashboard" onclick="selectPersonalSection('dashboard')">Dashboard</button>
-          <button class="domain-section-btn" data-personal-section="definition" onclick="selectPersonalSection('definition')">Definition</button>
+        <div id="personalSectionNav" class="domain-sections personal-section-nav" style="display:none">
+          <div class="personal-section-left">
+            <button class="domain-section-btn" data-personal-section="dashboard" onclick="selectPersonalSection('dashboard')">Dashboard</button>
+            <button class="domain-section-btn" data-personal-section="definition" onclick="selectPersonalSection('definition')">Definition</button>
+          </div>
+          <div class="range-toggle personal-range-toggle" id="personalRangeToggle">
+            <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">This week</button>
+            <button class="range-btn dash-range-30" onclick="setDashRange(30)">Last 30 days</button>
+          </div>
         </div>
 
         <section id="todayPage">
@@ -3283,12 +3303,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
         </section>
 
         <section id="engineDashboardPage" style="display:none">
-          <div class="dash-toolbar">
-            <div class="range-toggle">
-              <button class="range-btn dash-range-7 active" onclick="setDashRange(7)">This week</button>
-              <button class="range-btn dash-range-30" onclick="setDashRange(30)">Last 30 days</button>
-            </div>
-          </div>
+          <div class="dash-toolbar" style="display:none"></div>
           <div class="metrics" id="engineDashMetrics"></div>
           <div id="engineDashCharts"></div>
         </section>
@@ -5047,6 +5062,8 @@ function showPersonalNav(section){
   if(!nav) return;
   nav.style.display="flex";
   nav.querySelectorAll("[data-personal-section]").forEach(b=>b.classList.toggle("active", b.dataset.personalSection===section));
+  const range=document.getElementById("personalRangeToggle");
+  if(range) range.style.display=section==="dashboard"?"flex":"none";
 }
 function hidePersonalNav(){
   const nav=document.getElementById("personalSectionNav");
@@ -5100,8 +5117,8 @@ async function renderWorkspace(){
     return;
   }
   if(currentPage==="definition"){
-    await openSystemDefinition(systemName||definitionSystem||currentEntrySystem());
     if(currentLayer===1) showPersonalNav("definition");
+    await openSystemDefinition(systemName||definitionSystem||currentEntrySystem());
     return;
   }
   const isWorkout=currentLayer===1 && systemName==="Workout";
@@ -5114,17 +5131,17 @@ async function renderWorkspace(){
     if(currentPage==="entry") document.getElementById("todayPage").style.display="block";
     else if(currentPage==="dashboard") document.getElementById("dashboardPage").style.display="block";
     else document.getElementById("analyticsPage").style.display="block";
+    showPersonalNav("dashboard");
     await renderDateStrip("dateStrip"); await loadSelectedDate();
     if(currentPage==="dashboard"||currentPage==="analytics") await renderDashboard();
-    showPersonalNav("dashboard");
   }else if(isWorkout){
     document.getElementById("workspaceTitle").textContent="Workout"; document.getElementById("workspaceSub").textContent="";
     if(currentPage==="entry"){document.getElementById("workoutPage").style.display="block";await renderDateStrip("workoutDateStrip");await loadWorkoutDate();}
-    else{document.getElementById("engineDashboardPage").style.display="block";await renderEngineDashboard("Workout");showPersonalNav("dashboard");}
+    else{document.getElementById("engineDashboardPage").style.display="block";showPersonalNav("dashboard");await renderEngineDashboard("Workout");}
   }else if(isMeditation){
     document.getElementById("workspaceTitle").textContent="Meditation"; document.getElementById("workspaceSub").textContent="";
     if(currentPage==="entry"){document.getElementById("meditationPage").style.display="block";await renderDateStrip("meditationDateStrip");await loadMeditationDate();}
-    else{document.getElementById("engineDashboardPage").style.display="block";await renderEngineDashboard("Meditation");showPersonalNav("dashboard");}
+    else{document.getElementById("engineDashboardPage").style.display="block";showPersonalNav("dashboard");await renderEngineDashboard("Meditation");}
   }else if(isSimpleTracker){
     document.getElementById("workspaceTitle").textContent=systemName;
     document.getElementById("workspaceSub").textContent="";
@@ -5135,8 +5152,8 @@ async function renderWorkspace(){
       await loadSimpleTrackerDate(systemName);
     }else{
       document.getElementById("engineDashboardPage").style.display="block";
-      await renderEngineDashboard(systemName);
       showPersonalNav("dashboard");
+      await renderEngineDashboard(systemName);
     }
   }else{
     // Productivity Engine + Domain Engine systems (and any unconfigured systems).
