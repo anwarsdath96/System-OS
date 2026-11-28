@@ -4293,7 +4293,7 @@ async function performAutoSave(){
     const monday = gameMondayDate(weekKey);
     const ok = await saveSystemEntry("Game", monday, payload);
     if(ok) gameEntriesCache[weekKey] = payload;
-    if(ok) setSaveStatus("saved");
+    // Let triggerAutoSave own the final status; edits made during this save stay dirty.
     return !!ok;
   }
   // Writing Definition — save to the same canonical definition record as the manual Save button.
@@ -4322,13 +4322,18 @@ async function performAutoSave(){
     const ok = await saveSystemEntry("Notes", OS_NOTES_DATE, {text: notesBox.value});
     return !!ok;
   }
-  // Domain notes / definition textareas
-  const domainNotesBox = document.getElementById("domainDefinitionText");
-  if(domainNotesBox && domainNotesBox.offsetParent !== null){
+  // Domain definition / notes share one textarea. Route by the active section so
+  // definitions never accidentally overwrite the separate Notes record.
+  const domainTextBox = document.getElementById("domainDefinitionText");
+  if(domainTextBox && domainTextBox.offsetParent !== null){
     const name = (layerItems[3]||[])[currentItem-1] || "";
-    if(name){
-      const ok = await saveSystemEntry(name + " Notes", NOTES_DATE || "1970-01-03", {text: domainNotesBox.value});
-      return !!ok;
+    if(currentPage === "definition" && definitionSystem){
+      const text = domainTextBox.value;
+      const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-*]\s*/,"").trim()).filter(Boolean);
+      return !!(await saveSystemEntry(definitionSystem, DEFINITION_DATE, {text, bullets}));
+    }
+    if(currentPage === "notes" && name){
+      return !!(await saveSystemEntry(name + " Notes", NOTES_DATE, {text: domainTextBox.value}));
     }
   }
   // System definition
