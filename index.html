@@ -3025,7 +3025,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
       <div class="sidebar-account">
         <div class="save-status-wrap">
           <div class="sidebar-email" id="userEmail"></div>
-          <div class="save-status-circle saved" id="saveStatusCircle" title="Saved">
+          <div class="save-status-circle saved" id="saveStatusCircle" title="Saved" role="status" aria-label="Autosave status: saved">
             <div class="progress"></div>
           </div>
         </div>
@@ -4262,6 +4262,7 @@ function setSaveStatus(state){
   el.classList.add(state);
   const titles = {saved:"Saved", dirty:"Unsaved changes", saving:"Saving…", error:"Save failed"};
   el.title = titles[state] || "";
+  el.setAttribute("aria-label", "Autosave status: " + (titles[state] || state));
 }
 function markDirty(){
   // Changes made during an in-flight save must remain queued for a second save.
@@ -4292,6 +4293,7 @@ async function performAutoSave(){
     const monday = gameMondayDate(weekKey);
     const ok = await saveSystemEntry("Game", monday, payload);
     if(ok) gameEntriesCache[weekKey] = payload;
+    if(ok) setSaveStatus("saved");
     return !!ok;
   }
   // Writing Definition — save to the same canonical definition record as the manual Save button.
@@ -4362,10 +4364,15 @@ document.addEventListener("click", e=>{
   if(e.target.closest("#gameDomainPage .game-yn button, #writingDomainPage .game-yn button")) markDirty();
 });
 document.addEventListener("input", e=>{
-  if(e.target.closest("#gameDomainPage, #writingDomainPage, #fitnessDomainPage")) markDirty();
+  if(e.target.closest("#gameDomainPage, #writingDomainPage, #fitnessDomainPage, #domainSectionPanel")) markDirty();
 });
 document.addEventListener("change", e=>{
-  if(e.target.closest("#writingDomainPage input, #gameDomainPage input")) markDirty();
+  if(e.target.closest("#gameDomainPage, #writingDomainPage, #fitnessDomainPage, #domainSectionPanel")) markDirty();
+});
+// Domain Engine controls use the same status-circle lifecycle as Personal Engine.
+// Only data-changing controls are covered; section navigation is intentionally excluded.
+document.addEventListener("click", e=>{
+  if(e.target.closest("#domainSectionPanel .score-swatch, #domainSectionPanel [data-save-change], #fitnessDomainPage [data-save-change]")) markDirty();
 });
 
 async function saveOSNotes(){
