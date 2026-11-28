@@ -4302,18 +4302,13 @@ async function performAutoSave(){
     const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-\*]\s*/,"").trim()).filter(Boolean);
     return !!(await saveSystemEntry("Writing", DEFINITION_DATE, {text, bullets}));
   }
-  // Writing entry — same payload and week key the manual save used
+  // Writing entry save is handled by a bridge exposed from its scoped workspace.
+  // (The form reader and week-key helpers live inside that workspace closure.)
   const writingPage=document.getElementById("writingDomainPage");
   const writingEntry=document.getElementById("writingEntryView");
-  const writingOpen = !!(writingPage && writingEntry && writingEntry.classList.contains("active") && getComputedStyle(writingPage).display!=="none");
-  if((domainName==="Writing" || writingOpen) && (domainSection==="entry" || writingOpen) && typeof readForm==="function"){
-    const key = selectedWeek || currentWeek();
-    selectedWeek = key;
-    const payload = readForm();
-    payload.weekKey = key;
-    const ok = await saveSystemEntry("Writing", weekDate(key), payload);
-    if(ok) entries[key] = payload;
-    return !!ok;
+  const writingOpen=!!(writingPage && writingEntry && writingEntry.classList.contains("active") && getComputedStyle(writingPage).display!=="none");
+  if(domainName==="Writing" && domainSection==="entry" || writingOpen){
+    if(typeof window.autoSaveWritingEntry==="function") return await window.autoSaveWritingEntry();
   }
   // Entry hub (personal / productivity)
   if(workspaceMode === "entry" && currentUser){
@@ -6836,6 +6831,21 @@ function readForm(){
     articlesCompleted:Math.max(0,Number($("articlesCompletedInput").value)||0)
   };
 }
+// Expose a scoped Writing save bridge so the global auto-save controller can
+// access this workspace's local week state and form reader.
+window.autoSaveWritingEntry = async function(){
+  if(!currentUser) return false;
+  const key=selectedWeek || currentWeek();
+  selectedWeek=key;
+  const payload=readForm();
+  payload.weekKey=key;
+  const ok=await saveSystemEntry("Writing",weekDate(key),payload);
+  if(ok){
+    entries[key]=payload;
+    if($("writingDashboardView")?.classList.contains("active")) await renderDashboard();
+  }
+  return !!ok;
+};
 async function loadForm(key){
   selectedWeek=key;
   if(currentUser) await loadWritingEntries();
