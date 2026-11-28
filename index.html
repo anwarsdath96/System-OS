@@ -3583,7 +3583,6 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
                     </div>
                   </div>
                   <div class="game-actions">
-                    <button class="game-btn game-ghost" id="gameClearBtn">Clear</button>
                     <button class="save-btn" id="gameSaveBtn">Save</button>
                   </div>
                 </div>
@@ -4281,6 +4280,23 @@ async function triggerAutoSave(){
   }
 }
 async function performAutoSave(){
+  // Game domain entry
+  const gamePage=document.getElementById("gameDomainPage");
+  if(gamePage && gamePage.style.display!=="none" && document.getElementById("gameEntryView")?.classList.contains("active")){
+    const payload=gameFormData();
+    const monday=gameMondayDate(gameSelectedWeek);
+    const ok=await saveSystemEntry("Game", monday, payload);
+    if(ok) gameEntriesCache[gameSelectedWeek]=payload;
+    return !!ok;
+  }
+  // Writing domain entry
+  const writingPage=document.getElementById("writingDomainPage");
+  if(writingPage && writingPage.style.display!=="none"){
+    const payload=readForm();
+    const ok=await saveSystemEntry("Writing", weekDate(selectedWeek), payload);
+    if(ok) entries[selectedWeek]=payload;
+    return !!ok;
+  }
   // Entry hub (personal / productivity)
   if(workspaceMode === "entry" && currentUser){
     return await saveEntryHub(true);
@@ -6405,7 +6421,11 @@ function gameInitEvents(){
       const b = e.target.closest("button[data-value]");
       if(!b) return;
       group.querySelectorAll("button").forEach(x => x.classList.toggle("selected", x === b));
+      markDirty();
     };
+  });
+  document.querySelectorAll("#gameDomainPage input[type=number], #gameDomainPage input[type=text]").forEach(input => {
+    input.addEventListener("input", markDirty);
   });
 
   document.getElementById("gameSaveBtn").onclick = async () => {
@@ -6418,7 +6438,6 @@ function gameInitEvents(){
       flashSaved(document.getElementById("gameSaveBtn"));
     }
   };
-  document.getElementById("gameClearBtn").onclick = () => gameFill({});
 
   document.querySelectorAll("#gameDomainPage .game-subtab").forEach(b => {
     b.onclick = () => {
@@ -6935,7 +6954,11 @@ async function showSection(section){
   if(section==="dashboard")await renderDashboard();
 }
 window.showWritingWorkspaceSection = showSection;
-document.querySelectorAll("#writingDomainPage [data-day-dev],#writingDomainPage [data-day-ref]").forEach(i=>i.addEventListener("input",updateEntryTotals));
+document.querySelectorAll("#writingDomainPage [data-day-dev],#writingDomainPage [data-day-ref]").forEach(i=>i.addEventListener("input",()=>{updateEntryTotals();markDirty();}));
+["threadsExpanded","articlesCompletedInput"].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener("input", markDirty);
+});
 $("writingPrevWeek").onclick=()=>loadForm(addWeek(selectedWeek,-1));
 $("writingNextWeek").onclick=()=>loadForm(addWeek(selectedWeek,1));
 $("writingCalendarTrigger").onclick=()=>{
