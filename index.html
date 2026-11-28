@@ -4331,17 +4331,13 @@ async function performAutoSave(){
   }
   // Domain definition / notes share one textarea. Route by the active section so
   // definitions never accidentally overwrite the separate Notes record.
-  // Use both currentPage and domainSection, and check editor visibility via style.display for reliability.
   const domainTextBox = document.getElementById("domainDefinitionText");
-  const domainEditor = document.getElementById("domainDefinitionEditor");
-  const domainPanel = document.getElementById("domainSectionPanel");
-  const domainEditorVisible = domainTextBox && domainEditor && domainPanel &&
-    (domainEditor.style.display === "flex" || domainEditor.style.display === "block" || 
-     (domainTextBox.offsetParent !== null && domainPanel.style.display !== "none"));
-  if(domainEditorVisible){
-    const name = (layerItems[3]||[])[currentItem-1] || "";
-    const isNotes = currentPage === "notes" || domainSection === "notes";
-    const isDef = currentPage === "definition" || domainSection === "definition";
+  const name = (layerItems[3]||[])[currentItem-1] || "";
+  const isNotes = currentPage === "notes" || domainSection === "notes";
+  const isDef = currentPage === "definition" || domainSection === "definition";
+  // More reliable: if we are on a domain notes/definition page and the textarea exists, save it.
+  // Visibility checks were too brittle with the domain workspace shell and CSS overrides.
+  if(domainTextBox && currentLayer === 3 && (isNotes || isDef)){
     if(isNotes && name){
       return !!(await saveSystemEntry(name + " Notes", NOTES_DATE, {text: domainTextBox.value}));
     }
@@ -4388,7 +4384,7 @@ async function performAutoSave(){
   const anyEditorVisible =
     (osNotesEl && osNotesEl.classList.contains("is-active")) ||
     (sysDefPage && sysDefPage.style.display === "block") ||
-    (domainEditor && (domainEditor.style.display === "flex" || domainEditor.style.display === "block")) ||
+    (currentLayer === 3 && (currentPage === "notes" || currentPage === "definition" || domainSection === "notes" || domainSection === "definition")) ||
     document.querySelector("#fitnessDomainPage .fitness-panel.active textarea");
   if(anyEditorVisible){
     console.warn("Auto-save: visible Notes/Definition editor detected but no save path matched. currentPage=", currentPage, "domainSection=", domainSection, "definitionSystem=", definitionSystem);
