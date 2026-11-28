@@ -1189,7 +1189,8 @@ input:focus,select:focus{border-color:#687382}
   border-color:rgba(142,184,232,.25);
 }
 .save-status-circle.error{
-  border-color:#8eb8e8;
+  border-color:#ef6973;
+  background:transparent;
 }
 .save-status-circle .progress{
   position:absolute;
@@ -4263,38 +4264,55 @@ function setSaveStatus(state){
   el.title = titles[state] || "";
 }
 function markDirty(){
-  if(saveStatus === "saving") return;
+  // Changes made during an in-flight save must remain queued for a second save.
   setSaveStatus("dirty");
   clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(triggerAutoSave, 2000);
+  if(saveStatus !== "saving") autoSaveTimer = setTimeout(triggerAutoSave, 1000);
 }
 async function triggerAutoSave(){
   if(saveStatus !== "dirty") return;
   setSaveStatus("saving");
   try{
     const ok = await performAutoSave();
-    setSaveStatus(ok ? "saved" : "error");
+    // If input changed during the save, markDirty left the state dirty.
+    if(saveStatus === "dirty") autoSaveTimer = setTimeout(triggerAutoSave, 1000);
+    else setSaveStatus(ok ? "saved" : "error");
   }catch(e){
     console.error(e);
-    setSaveStatus("error");
+    if(saveStatus === "dirty") autoSaveTimer = setTimeout(triggerAutoSave, 1000);
+    else setSaveStatus("error");
   }
 }
 async function performAutoSave(){
-  // Game domain entry
-  const gamePage=document.getElementById("gameDomainPage");
-  if(gamePage && gamePage.style.display!=="none" && document.getElementById("gameEntryView")?.classList.contains("active")){
-    const payload=gameFormData();
-    const monday=gameMondayDate(gameSelectedWeek);
-    const ok=await saveSystemEntry("Game", monday, payload);
-    if(ok) gameEntriesCache[gameSelectedWeek]=payload;
+  const domainName = currentLayer===3 ? ((layerItems[3]||[])[currentItem-1]||"") : "";
+  // Game entry — keyed by the Monday of the selected week
+  if(domainName==="Game" && domainSection==="entry" && typeof gameFormData==="function"){
+    const weekKey = gameSelectedWeek || gameCurrentWeek();
+    const payload = gameFormData();
+    const monday = gameMondayDate(weekKey);
+    const ok = await saveSystemEntry("Game", monday, payload);
+    if(ok) gameEntriesCache[weekKey] = payload;
     return !!ok;
   }
-  // Writing domain entry
+  // Writing Definition — save to the same canonical definition record as the manual Save button.
+  const writingDefinition = domainName==="Writing" && currentLayer===3 && currentPage==="definition";
+  const defBox = document.getElementById("domainDefinitionText");
+  if(writingDefinition && defBox && defBox.offsetParent !== null){
+    const text = defBox.value;
+    const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-\*]\s*/,"").trim()).filter(Boolean);
+    return !!(await saveSystemEntry("Writing", DEFINITION_DATE, {text, bullets}));
+  }
+  // Writing entry — same payload and week key the manual save used
   const writingPage=document.getElementById("writingDomainPage");
-  if(writingPage && writingPage.style.display!=="none"){
-    const payload=readForm();
-    const ok=await saveSystemEntry("Writing", weekDate(selectedWeek), payload);
-    if(ok) entries[selectedWeek]=payload;
+  const writingEntry=document.getElementById("writingEntryView");
+  const writingOpen = !!(writingPage && writingEntry && writingEntry.classList.contains("active") && getComputedStyle(writingPage).display!=="none");
+  if((domainName==="Writing" || writingOpen) && (domainSection==="entry" || writingOpen) && typeof readForm==="function"){
+    const key = selectedWeek || currentWeek();
+    selectedWeek = key;
+    const payload = readForm();
+    payload.weekKey = key;
+    const ok = await saveSystemEntry("Writing", weekDate(key), payload);
+    if(ok) entries[key] = payload;
     return !!ok;
   }
   // Entry hub (personal / productivity)
@@ -4308,11 +4326,11 @@ async function performAutoSave(){
     return !!ok;
   }
   // Domain notes / definition textareas
-  const defBox = document.getElementById("domainDefinitionText");
-  if(defBox && defBox.offsetParent !== null){
+  const domainNotesBox = document.getElementById("domainDefinitionText");
+  if(domainNotesBox && domainNotesBox.offsetParent !== null){
     const name = (layerItems[3]||[])[currentItem-1] || "";
     if(name){
-      const ok = await saveSystemEntry(name + " Notes", NOTES_DATE || "1970-01-03", {text: defBox.value});
+      const ok = await saveSystemEntry(name + " Notes", NOTES_DATE || "1970-01-03", {text: domainNotesBox.value});
       return !!ok;
     }
   }
@@ -4334,17 +4352,26 @@ async function performAutoSave(){
   return true;
 }
 
-// Hook textareas for auto-save
+// Hook textareas and domain forms for auto-save
 function bindAutoSaveInputs(){
-  document.querySelectorAll("textarea").forEach(ta=>{
-    if(ta.dataset.autosaveBound) return;
-    ta.dataset.autosaveBound = "1";
-    ta.addEventListener("input", markDirty);
+  document.querySelectorAll("textarea, #gameDomainPage input, #writingDomainPage input").forEach(el=>{
+    if(el.dataset.autosaveBound) return;
+    el.dataset.autosaveBound = "1";
+    el.addEventListener("input", markDirty);
   });
 }
 document.addEventListener("DOMContentLoaded", bindAutoSaveInputs);
-// Also rebind periodically in case of dynamic content
 setInterval(bindAutoSaveInputs, 2000);
+// Delegation covers Game/Writing Yes-No buttons and any late-added fields
+document.addEventListener("click", e=>{
+  if(e.target.closest("#gameDomainPage .game-yn button, #writingDomainPage .game-yn button")) markDirty();
+});
+document.addEventListener("input", e=>{
+  if(e.target.closest("#gameDomainPage, #writingDomainPage, #fitnessDomainPage")) markDirty();
+});
+document.addEventListener("change", e=>{
+  if(e.target.closest("#writingDomainPage input, #gameDomainPage input")) markDirty();
+});
 
 async function saveOSNotes(){
   const box=document.getElementById("osNotesText");
@@ -6812,7 +6839,14 @@ function readForm(){
 async function loadForm(key){
   selectedWeek=key;
   if(currentUser) await loadWritingEntries();
+  // A newer week was selected, or the user started typing, while this load was in flight.
+  if(selectedWeek!==key) return;
   $("writingWeekLabel").textContent=formatWeek(key);
+  if(saveStatus==="dirty" || saveStatus==="saving"){
+    updateEntryTotals();
+    renderCalendar();
+    return;
+  }
   const e=entries[key]||{developmental:{},refinement:{}};
   document.querySelectorAll("#writingDomainPage [data-day-dev]").forEach(i=>i.value=e.developmental?.[i.dataset.dayDev]??"");
   document.querySelectorAll("#writingDomainPage [data-day-ref]").forEach(i=>i.value=e.refinement?.[i.dataset.dayRef]??"");
@@ -7014,6 +7048,13 @@ async function showWritingDomain(section){
   if(window.showWritingWorkspaceSection) window.showWritingWorkspaceSection(section);
   if(section==="definition"){
     document.getElementById("writingDomainPage").style.display="none";
+  } else if(section==="entry"){
+    domainSection="entry";
+    document.querySelectorAll("#writingDomainPage input").forEach(el=>{
+      if(el.dataset.autosaveBound) return;
+      el.dataset.autosaveBound="1";
+      el.addEventListener("input", markDirty);
+    });
   }
 }
 const selectDomainSectionWithWriting = selectDomainSection;
