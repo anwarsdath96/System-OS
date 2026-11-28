@@ -4270,11 +4270,17 @@ function markDirty(){
 async function triggerManualSave(){
   if(saveStatus !== "dirty") return;
   setSaveStatus("saving");
+  const start = Date.now();
+  const MIN_ANIM_MS = 700; // ensure the ring animation is always visible and consistent
   try{
     const ok = await performAutoSave();
+    const elapsed = Date.now() - start;
+    if(elapsed < MIN_ANIM_MS) await new Promise(r => setTimeout(r, MIN_ANIM_MS - elapsed));
     setSaveStatus(ok ? "saved" : "error");
   }catch(e){
     console.error(e);
+    const elapsed = Date.now() - start;
+    if(elapsed < MIN_ANIM_MS) await new Promise(r => setTimeout(r, MIN_ANIM_MS - elapsed));
     setSaveStatus("error");
   }
 }
