@@ -1120,7 +1120,7 @@ input:focus,select:focus{border-color:#687382}
 
 
 
-/* Auto-save active — hide manual Save buttons */
+/* Manual save via Ctrl+Enter — hide manual Save buttons */
 .save-btn, .save-row, .notes-save, .game-actions .save-btn, .domain-def-save{
   display:none !important;
 }
@@ -3025,7 +3025,7 @@ body.light-mode #fitnessDomainPage .save-row button:hover{
       <div class="sidebar-account">
         <div class="save-status-wrap">
           <div class="sidebar-email" id="userEmail"></div>
-          <div class="save-status-circle saved" id="saveStatusCircle" title="Saved" role="status" aria-label="Autosave status: saved">
+          <div class="save-status-circle saved" id="saveStatusCircle" title="Saved (Ctrl+Enter to save)" role="status" aria-label="Save status: saved">
             <div class="progress"></div>
           </div>
         </div>
@@ -4250,9 +4250,8 @@ function flashSaved(btn){
 }
 
 /* ==============================
-   AUTO-SAVE + STATUS CIRCLE
+   MANUAL SAVE + STATUS CIRCLE (Ctrl+Enter)
    ============================== */
-let autoSaveTimer = null;
 let saveStatus = "saved"; // saved | dirty | saving | error
 function setSaveStatus(state){
   saveStatus = state;
@@ -4262,28 +4261,31 @@ function setSaveStatus(state){
   el.classList.add(state);
   const titles = {saved:"Saved", dirty:"Unsaved changes", saving:"Saving…", error:"Save failed"};
   el.title = titles[state] || "";
-  el.setAttribute("aria-label", "Autosave status: " + (titles[state] || state));
+  el.setAttribute("aria-label", "Save status: " + (titles[state] || state));
 }
 function markDirty(){
-  // Changes made during an in-flight save must remain queued for a second save.
-  setSaveStatus("dirty");
-  clearTimeout(autoSaveTimer);
-  if(saveStatus !== "saving") autoSaveTimer = setTimeout(triggerAutoSave, 1000);
+  // New change detected — go grey and wait for Ctrl+Enter
+  if(saveStatus !== "saving") setSaveStatus("dirty");
 }
-async function triggerAutoSave(){
+async function triggerManualSave(){
   if(saveStatus !== "dirty") return;
   setSaveStatus("saving");
   try{
     const ok = await performAutoSave();
-    // If input changed during the save, markDirty left the state dirty.
-    if(saveStatus === "dirty") autoSaveTimer = setTimeout(triggerAutoSave, 1000);
-    else setSaveStatus(ok ? "saved" : "error");
+    setSaveStatus(ok ? "saved" : "error");
   }catch(e){
     console.error(e);
-    if(saveStatus === "dirty") autoSaveTimer = setTimeout(triggerAutoSave, 1000);
-    else setSaveStatus("error");
+    setSaveStatus("error");
   }
 }
+// Ctrl+Enter (or Cmd+Enter) to save
+document.addEventListener("keydown", function(e){
+  if((e.ctrlKey || e.metaKey) && e.key === "Enter"){
+    e.preventDefault();
+    if(saveStatus === "dirty") triggerManualSave();
+  }
+});
+
 async function performAutoSave(){
   const domainName = currentLayer===3 ? ((layerItems[3]||[])[currentItem-1]||"") : "";
   // Game entry — keyed by the Monday of the selected week
@@ -4293,23 +4295,21 @@ async function performAutoSave(){
     const monday = gameMondayDate(weekKey);
     const ok = await saveSystemEntry("Game", monday, payload);
     if(ok) gameEntriesCache[weekKey] = payload;
-    // Let triggerAutoSave own the final status; edits made during this save stay dirty.
     return !!ok;
   }
   // Writing Definition — save to the same canonical definition record as the manual Save button.
-  const writingDefinition = domainName==="Writing" && currentLayer===3 && currentPage==="definition";
+  const writingDefinition = domainName==="Writing" && currentLayer===3 && (currentPage==="definition" || domainSection==="definition");
   const defBox = document.getElementById("domainDefinitionText");
-  if(writingDefinition && defBox && defBox.offsetParent !== null){
+  if(writingDefinition && defBox && (defBox.offsetParent !== null || document.getElementById("domainDefinitionEditor")?.style.display === "flex")){
     const text = defBox.value;
     const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-\*]\s*/,"").trim()).filter(Boolean);
     return !!(await saveSystemEntry("Writing", DEFINITION_DATE, {text, bullets}));
   }
   // Writing entry save is handled by a bridge exposed from its scoped workspace.
-  // (The form reader and week-key helpers live inside that workspace closure.)
   const writingPage=document.getElementById("writingDomainPage");
   const writingEntry=document.getElementById("writingEntryView");
   const writingOpen=!!(writingPage && writingEntry && writingEntry.classList.contains("active") && getComputedStyle(writingPage).display!=="none");
-  if(domainName==="Writing" && domainSection==="entry" || writingOpen){
+  if((domainName==="Writing" && domainSection==="entry") || writingOpen){
     if(typeof window.autoSaveWritingEntry==="function") return await window.autoSaveWritingEntry();
   }
   // Entry hub (personal / productivity)
@@ -4318,43 +4318,81 @@ async function performAutoSave(){
   }
   // OS Notes
   const notesBox = document.getElementById("osNotesText");
-  if(notesBox && document.getElementById("osNotes")?.classList.contains("is-active")){
+  const osNotesEl = document.getElementById("osNotes");
+  if(notesBox && osNotesEl && osNotesEl.classList.contains("is-active")){
     const ok = await saveSystemEntry("Notes", OS_NOTES_DATE, {text: notesBox.value});
     return !!ok;
   }
   // Domain definition / notes share one textarea. Route by the active section so
   // definitions never accidentally overwrite the separate Notes record.
+  // Use both currentPage and domainSection, and check editor visibility via style.display for reliability.
   const domainTextBox = document.getElementById("domainDefinitionText");
-  if(domainTextBox && domainTextBox.offsetParent !== null){
+  const domainEditor = document.getElementById("domainDefinitionEditor");
+  const domainPanel = document.getElementById("domainSectionPanel");
+  const domainEditorVisible = domainTextBox && domainEditor && domainPanel &&
+    (domainEditor.style.display === "flex" || domainEditor.style.display === "block" || 
+     (domainTextBox.offsetParent !== null && domainPanel.style.display !== "none"));
+  if(domainEditorVisible){
     const name = (layerItems[3]||[])[currentItem-1] || "";
-    if(currentPage === "definition" && definitionSystem){
-      const text = domainTextBox.value;
-      const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-*]\s*/,"").trim()).filter(Boolean);
-      return !!(await saveSystemEntry(definitionSystem, DEFINITION_DATE, {text, bullets}));
-    }
-    if(currentPage === "notes" && name){
+    const isNotes = currentPage === "notes" || domainSection === "notes";
+    const isDef = currentPage === "definition" || domainSection === "definition";
+    if(isNotes && name){
       return !!(await saveSystemEntry(name + " Notes", NOTES_DATE, {text: domainTextBox.value}));
     }
-  }
-  // System definition
-  const sysDef = document.querySelector("#systemDefinitionPage textarea.definition-note");
-  if(sysDef && sysDef.offsetParent !== null && definitionSystem){
-    const ok = await saveSystemEntry(definitionSystem, DEFINITION_DATE, {text: sysDef.value, bullets: []});
-    return !!ok;
-  }
-  // Fitness notes
-  for(const key of (typeof FITNESS_NOTE_KEYS !== "undefined" ? FITNESS_NOTE_KEYS : [])){
-    const box = document.getElementById(fitnessNoteTextId(key));
-    if(box && box.offsetParent !== null){
-      const ok = await saveSystemEntry(fitnessNoteSystem(key), FITNESS_NOTE_DATE, {text: box.value});
-      return !!ok;
+    if(isDef && (definitionSystem || name)){
+      const sys = definitionSystem || name;
+      const text = domainTextBox.value;
+      const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-\*]\s*/,"").trim()).filter(Boolean);
+      return !!(await saveSystemEntry(sys, DEFINITION_DATE, {text, bullets}));
     }
   }
-  // Generic: if nothing matched, treat as success (no-op)
+  // System definition (Personal / Productivity engines)
+  const sysDefPage = document.getElementById("systemDefinitionPage");
+  const sysDef = document.getElementById("systemDefinitionText");
+  if(sysDef && sysDefPage && (sysDefPage.style.display === "block" || sysDef.offsetParent !== null) && definitionSystem){
+    const text = sysDef.value;
+    const bullets = text.split(/\n/).map(line=>line.replace(/^\s*[•\-\*]\s*/,"").trim()).filter(Boolean);
+    const ok = await saveSystemEntry(definitionSystem, DEFINITION_DATE, {text, bullets});
+    return !!ok;
+  }
+  // Fitness notes — only the active panel
+  if(typeof FITNESS_NOTE_KEYS !== "undefined"){
+    const activePanel = document.querySelector("#fitnessDomainPage .fitness-panel.active");
+    if(activePanel){
+      const box = activePanel.querySelector("textarea");
+      if(box && box.value !== undefined){
+        // Map back to key from id
+        const id = box.id || "";
+        const key = FITNESS_NOTE_KEYS.find(k => id.includes(k)) || FITNESS_NOTE_KEYS[0];
+        const ok = await saveSystemEntry(fitnessNoteSystem(key), FITNESS_NOTE_DATE, {text: box.value});
+        return !!ok;
+      }
+    }
+    // Fallback to original loop if needed
+    for(const key of FITNESS_NOTE_KEYS){
+      const box = document.getElementById(fitnessNoteTextId(key));
+      if(box && (box.offsetParent !== null || (box.closest(".fitness-panel") && box.closest(".fitness-panel").classList.contains("active")))){
+        const ok = await saveSystemEntry(fitnessNoteSystem(key), FITNESS_NOTE_DATE, {text: box.value});
+        return !!ok;
+      }
+    }
+  }
+  // If a notes/definition editor is visibly active but we didn't match a path, fail the save
+  // so the status circle shows error instead of a false "saved".
+  const anyEditorVisible =
+    (osNotesEl && osNotesEl.classList.contains("is-active")) ||
+    (sysDefPage && sysDefPage.style.display === "block") ||
+    (domainEditor && (domainEditor.style.display === "flex" || domainEditor.style.display === "block")) ||
+    document.querySelector("#fitnessDomainPage .fitness-panel.active textarea");
+  if(anyEditorVisible){
+    console.warn("Auto-save: visible Notes/Definition editor detected but no save path matched. currentPage=", currentPage, "domainSection=", domainSection, "definitionSystem=", definitionSystem);
+    return false;
+  }
+  // Generic: if nothing matched, treat as success (no-op for other views)
   return true;
 }
 
-// Hook textareas and domain forms for auto-save
+// Hook textareas and domain forms so changes mark dirty (grey circle)
 function bindAutoSaveInputs(){
   document.querySelectorAll("textarea, #gameDomainPage input, #writingDomainPage input").forEach(el=>{
     if(el.dataset.autosaveBound) return;
