@@ -3787,9 +3787,9 @@ const productivityGroups = [
   {blocks:[["Year"]]}
 ];
 const domainGroups = [
-  {blocks:[["Fitness","Game"]]},
-  {blocks:[["Money","Projects","Upskilling"]]},
-  {blocks:[["Speaking","Reading"]]}
+  {blocks:[["Writing","Fitness","Game"]]},
+  {blocks:[["Money","Projects","Blog"]]},
+  {blocks:[["Upskilling","Speaking","Reading"]]}
 ];
 const layerItems = {
   1: [...personalGroups[0].blocks.flat(),"Errands"],
@@ -4207,6 +4207,10 @@ function renderOSSidebar(){
   sidebarItems.innerHTML="";
   const timelineItem=addSidebarItem(sidebarItems,"Timeline",osSection==="timeline",()=>showOSTimeline());
   if(osSection==="timeline") timelineItem.setAttribute("aria-current","page");
+  const frameworkItem=addSidebarItem(sidebarItems,"Framework",osSection==="framework",()=>showOSBlank("framework"));
+  if(osSection==="framework") frameworkItem.setAttribute("aria-current","page");
+  const quotesItem=addSidebarItem(sidebarItems,"Quotes",osSection==="quotes",()=>showOSBlank("quotes"));
+  if(osSection==="quotes") quotesItem.setAttribute("aria-current","page");
   const notesItem=addSidebarItem(sidebarItems,"Notes",osSection==="notes",()=>showOSNotes());
   if(osSection==="notes") notesItem.setAttribute("aria-current","page");
 }
@@ -4336,11 +4340,34 @@ function showOSTimeline(){
   host.style.display="block";
   const notes=document.getElementById("osNotes");
   if(notes) notes.classList.remove("is-active");
+  const blank=document.getElementById("osBlank");
+  if(blank) blank.style.display="none";
   if(!host.querySelector(".os-home-dashboard-frame")) mountOSHomeDashboard();
   const frame=host.querySelector(".os-home-dashboard-frame");
   if(frame) frame.style.display="block";
 }
+function showOSBlank(section){
+  osSection=section;
+  renderOSSidebar();
+  const host=document.getElementById("osPage");
+  host.style.display="block";
+  host.classList.add("os-dashboard-host");
+  const frame=host.querySelector(".os-home-dashboard-frame");
+  if(frame) frame.style.display="none";
+  const notes=document.getElementById("osNotes");
+  if(notes) notes.classList.remove("is-active");
+  let blank=document.getElementById("osBlank");
+  if(!blank){
+    blank=document.createElement("div");
+    blank.id="osBlank";
+    blank.style.cssText="flex:1;min-height:420px;";
+    host.appendChild(blank);
+  }
+  blank.style.display="block";
+}
 async function showOSNotes(){
+  const blank=document.getElementById("osBlank");
+  if(blank) blank.style.display="none";
   osSection="notes";
   renderOSSidebar();
   const host=document.getElementById("osPage");
@@ -4395,8 +4422,11 @@ function sidebarIcon(name){
     Speaking:'<path d="M12 3a4 4 0 0 1 4 4v4a4 4 0 0 1-8 0V7a4 4 0 0 1 4-4z"/><path d="M5 12a7 7 0 0 0 14 0M12 19v2M9 21h6"/>',
     Upskilling:'<path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/>',
     Projects:'<path d="M9 4h6l1 2h4v14H4V6h4l1-2z"/><path d="M9 12h6M9 15h4"/>',
+    Blog:'<path d="M4 4h12l4 4v12H4z"/><path d="M16 4v4h4M8 11h8M8 15h6"/>',
     Notes:'<path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6M8 13h8M8 17h6"/>',
-    Timeline:'<circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/>'
+    Timeline:'<circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/>',
+    Framework:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',
+    Quotes:'<path d="M8 7h3v4H8zM13 7h3v4h-3zM7 13c0 2 2 4 5 4"/>'
   };
   return `<span class="item-icon"><svg viewBox="0 0 24 24">${paths[name]||'<circle cx="12" cy="12" r="3"/>'}</svg></span>`;
 }
@@ -4481,6 +4511,10 @@ function renderSidebar(){
     const overviewDivider=document.createElement("div");
     overviewDivider.className="divider";
     container.appendChild(overviewDivider);
+    const label=document.createElement("div");
+    label.className="sidebar-group";
+    label.textContent="Key Domains";
+    container.appendChild(label);
     domainGroups.forEach((group,groupIndex)=>{
       if(groupIndex){
         const line=document.createElement("div");
